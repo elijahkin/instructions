@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "optimizer.h"
 
 void sigmoid_test() {
@@ -18,7 +16,7 @@ void sigmoid_test() {
   assert(add->arity() == 2);
   assert(div->arity() == 2);
 
-  LOG(div->to_string());
+  LOG(10) << div->to_string();
 }
 
 void rewrite_test() {
@@ -33,7 +31,7 @@ void rewrite_test() {
 
   Optimizer opt;
   opt.Optimize(add);
-  LOG(exp->to_string());
+  LOG(10) << exp->to_string();
 }
 
 void subtract_test() {
@@ -47,7 +45,7 @@ void subtract_test() {
 
   Optimizer opt;
   opt.Optimize(neg);
-  LOG(add->to_string());
+  LOG(10) << add->to_string();
 }
 
 int main() {
