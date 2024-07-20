@@ -5,11 +5,11 @@
 int main() {
   // Create a sigmoid function as a test
   Instruction *x = CreateNullary(kVariable);
-  Instruction *neg = CreateUnary(kNeg, x);
+  Instruction *neg = CreateUnary(kNegate, x);
   Instruction *exp = CreateUnary(kExp, neg);
   Instruction *one = CreateNullary(kConstant);
   Instruction *add = CreateBinary(kAdd, one, exp);
-  Instruction *div = CreateBinary(kDiv, one, add);
+  Instruction *div = CreateBinary(kDivide, one, add);
 
   assert(x->arity() == 0);
   assert(neg->arity() == 1);
