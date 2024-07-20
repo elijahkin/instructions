@@ -1,25 +1,17 @@
 #include "optimizer.h"
 
-void sigmoid_test() {
+void add_to_multiply_test() {
   Instruction *x = CreateParameter();
 
-  Instruction *neg = CreateUnary(kNegate, x);
-  Instruction *exp = CreateUnary(kExp, neg);
-  Instruction *one = CreateConstant(1);
-  Instruction *add = CreateBinary(kAdd, one, exp);
-  Instruction *div = CreateBinary(kDivide, one, add);
+  Instruction *add = CreateBinary(kAdd, x, x);
+  Instruction *neg = CreateUnary(kNegate, add);
 
-  assert(x->arity() == 0);
-  assert(neg->arity() == 1);
-  assert(exp->arity() == 1);
-  assert(one->arity() == 0);
-  assert(add->arity() == 2);
-  assert(div->arity() == 2);
-
-  VLOG(10) << div->to_string();
+  Optimizer opt;
+  opt.Optimize(add);
+  assert(neg->operand(0)->opcode() == kMultiply);
 }
 
-void rewrite_test() {
+void factor_add_multiply_test() {
   Instruction *x = CreateParameter();
   Instruction *y = CreateParameter();
   Instruction *z = CreateParameter();
@@ -31,10 +23,10 @@ void rewrite_test() {
 
   Optimizer opt;
   opt.Optimize(add);
-  VLOG(10) << exp->to_string();
+  assert(exp->operand(0)->opcode() == kMultiply);
 }
 
-void subtract_test() {
+void negate_subtract_folding_test() {
   Instruction *x = CreateParameter();
   Instruction *y = CreateParameter();
   Instruction *z = CreateParameter();
@@ -45,12 +37,12 @@ void subtract_test() {
 
   Optimizer opt;
   opt.Optimize(neg);
-  VLOG(10) << add->to_string();
+  assert(add->operand(0)->opcode() == kSubtract);
 }
 
 int main() {
-  sigmoid_test();
-  rewrite_test();
-  subtract_test();
+  add_to_multiply_test();
+  factor_add_multiply_test();
+  negate_subtract_folding_test();
   return 0;
 }
