@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -O2 -std=c++11 -Wall -Wextra
+CFLAGS = -O3 -fno-exceptions -flto -s -std=c++11 -Wall -Wextra
 
 all: tests
 
