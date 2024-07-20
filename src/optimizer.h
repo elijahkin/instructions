@@ -25,8 +25,15 @@ public:
     case kNegate:
       changed = OptimizeNegate(instruction);
       break;
+    case kSubtract:
+      changed = OptimizeSubtract(instruction);
+      break;
     default:
       break;
+    }
+
+    for (auto operand : instruction->operands()) {
+      Optimize(operand);
     }
   }
 
@@ -118,6 +125,22 @@ public:
           negate, CreateBinary(kSubtract, negate->operand(0)->operand(1),
                                negate->operand(0)->operand(0)));
     }
+    return false;
+  }
+
+  bool OptimizeSubtract(Instruction *subtract) {
+    assert(subtract->opcode() == kSubtract);
+
+    if (subtract->operand(0)->opcode() == kLog &&
+        subtract->operand(0)->opcode() == kLog) {
+      VLOG(10) << "log(x)-log(y) --> log(x/y)";
+      return ReplaceInstruction(
+          subtract,
+          CreateUnary(kLog,
+                      CreateBinary(kDivide, subtract->operand(0)->operand(0),
+                                   subtract->operand(1)->operand(0))));
+    }
+
     return false;
   }
 };
