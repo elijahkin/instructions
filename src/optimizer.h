@@ -1,5 +1,5 @@
 #include "instruction.h"
-#include "log.h"
+#include "logging.h"
 
 bool ReplaceInstruction(Instruction *old_instruction,
                         Instruction *new_instruction) {
@@ -48,14 +48,14 @@ public:
     if (add->operand(0)->opcode() == kMultiply &&
         add->operand(1)->opcode() == kMultiply) {
       if (add->operand(0)->operand(0) == add->operand(1)->operand(0)) {
-        LOG(10) << "xy+xz --> x(y+z)";
+        VLOG(10) << "xy+xz --> x(y+z)";
         return ReplaceInstruction(
             add, CreateBinary(kMultiply, add->operand(0)->operand(0),
                               CreateBinary(kAdd, add->operand(0)->operand(1),
                                            add->operand(1)->operand(1))));
       }
       if (add->operand(0)->operand(1) == add->operand(1)->operand(1)) {
-        LOG(10) << "xz+yz --> (x+y)z";
+        VLOG(10) << "xz+yz --> (x+y)z";
         return ReplaceInstruction(
             add, CreateBinary(kMultiply,
                               CreateBinary(kAdd, add->operand(0)->operand(0),
@@ -65,7 +65,7 @@ public:
     }
 
     if (add->operand(0) == add->operand(1)) {
-      LOG(10) << "x+x --> 2*x";
+      VLOG(10) << "x+x --> 2*x";
       return ReplaceInstruction(
           add, CreateBinary(kMultiply, add->operand(0), CreateConstant(2)));
     }
@@ -84,7 +84,7 @@ public:
     assert(exp->opcode() == kExp);
 
     if (exp->operand(0)->opcode() == kLog) {
-      LOG(10) << "exp(log(x)) --> x";
+      VLOG(10) << "exp(log(x)) --> x";
       return ReplaceInstruction(exp, exp->operand(0)->operand(0));
     }
     return false;
@@ -94,7 +94,7 @@ public:
     assert(log->opcode() == kLog);
 
     if (log->operand(0)->opcode() == kExp) {
-      LOG(10) << "log(exp(x)) --> x";
+      VLOG(10) << "log(exp(x)) --> x";
       return ReplaceInstruction(log, log->operand(0)->operand(0));
     }
     return false;
@@ -106,7 +106,7 @@ public:
 
     if (multiply->operand(0)->opcode() == kExp &&
         multiply->operand(1)->opcode() == kExp) {
-      LOG(10) << "exp(x)*exp(y) --> exp(x+y)";
+      VLOG(10) << "exp(x)*exp(y) --> exp(x+y)";
       return ReplaceInstruction(
           multiply,
           CreateUnary(kExp, CreateBinary(kAdd, multiply->operand(0)->operand(0),
@@ -120,12 +120,12 @@ public:
     assert(negate->opcode() == kNegate);
 
     if (negate->operand(0)->opcode() == kNegate) {
-      LOG(10) << "-(-x) --> x";
+      VLOG(10) << "-(-x) --> x";
       return ReplaceInstruction(negate, negate->operand(0)->operand(0));
     }
 
     if (negate->operand(0)->opcode() == kSubtract) {
-      LOG(10) << "-(x-y) --> y-x";
+      VLOG(10) << "-(x-y) --> y-x";
       return ReplaceInstruction(
           negate, CreateBinary(kSubtract, negate->operand(0)->operand(1),
                                negate->operand(0)->operand(0)));

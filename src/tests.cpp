@@ -16,7 +16,7 @@ void sigmoid_test() {
   assert(add->arity() == 2);
   assert(div->arity() == 2);
 
-  LOG(10) << div->to_string();
+  VLOG(10) << div->to_string();
 }
 
 void rewrite_test() {
@@ -31,7 +31,7 @@ void rewrite_test() {
 
   Optimizer opt;
   opt.Optimize(add);
-  LOG(10) << exp->to_string();
+  VLOG(10) << exp->to_string();
 }
 
 void subtract_test() {
@@ -45,7 +45,7 @@ void subtract_test() {
 
   Optimizer opt;
   opt.Optimize(neg);
-  LOG(10) << add->to_string();
+  VLOG(10) << add->to_string();
 }
 
 int main() {
