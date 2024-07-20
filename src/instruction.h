@@ -38,8 +38,8 @@ public:
     std::string str;
     for (auto operand : operands()) {
       str += operand->to_string();
-      str += '\n';
     }
+    str += '\n';
     str += opcode_to_string(opcode_);
     str += '.';
     str += std::to_string(id_);

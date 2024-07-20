@@ -18,7 +18,7 @@ void sigmoid_test() {
   assert(add->arity() == 2);
   assert(div->arity() == 2);
 
-  std::cout << div->to_string() << std::endl << std::endl;
+  LOG(div->to_string());
 }
 
 void rewrite_test() {
@@ -33,7 +33,7 @@ void rewrite_test() {
 
   Optimizer opt;
   opt.Optimize(add);
-  std::cout << exp->to_string() << std::endl << std::endl;
+  LOG(exp->to_string());
 }
 
 void subtract_test() {
@@ -47,7 +47,7 @@ void subtract_test() {
 
   Optimizer opt;
   opt.Optimize(neg);
-  std::cout << add->to_string() << std::endl << std::endl;
+  LOG(add->to_string());
 }
 
 int main() {
