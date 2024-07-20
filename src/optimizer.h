@@ -15,7 +15,6 @@ bool ReplaceInstruction(Instruction *old_instruction,
 }
 
 class Optimizer {
-
 public:
   void Optimize(Instruction *instruction) {
     bool changed = false;
@@ -68,8 +67,8 @@ public:
 
     if (add->operand(0) == add->operand(1)) {
       std::cout << "[OPTIMIZER] x+x --> 2*x" << std::endl;
-      return ReplaceInstruction(add, CreateBinary(kMultiply, add->operand(0),
-                                                  CreateNullary(kConstant)));
+      return ReplaceInstruction(
+          add, CreateBinary(kMultiply, add->operand(0), CreateConstant(2)));
     }
 
     // TODO x+0 --> x
