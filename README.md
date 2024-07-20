@@ -1,8 +1,29 @@
-This is my implementation of an XLA-like optimizer for mathematical computations. I hope to eventually use it to generate CUDA code for executing functions defined by user-input LaTeX.
+## Overview
+This is my implementation of an XLA-like optimizer for mathematical computations. I hope to eventually use it to generating CUDA code from user-input LaTeX.
 
-Right now I need to work on:
+Given a computation, this optimizer constructs and traverses a tree representation of it, applying algebraic properties on its subtrees to produce an equivalent but (hopefully) cheaper computation.
 
-- Make Constant (and Variable? and Rng?) a subclass of Instruction with a field for data. Needs a function to retrieve the value. After that, implement constant related optimization passes
-- Improve ReplaceInstruction and Optimize function. We should recursively optimize until no changes occur
-- Better printing - fix opcode_to_string syntax
-- Long term: better pattern matcher
+For example,
+```c++
+parameter.0 = parameter()
+exp.2 = exp(parameter.0)
+parameter.1 = parameter()
+exp.3 = exp(parameter.1)
+multiply.4 = multiply(exp.2, exp.3)
+```
+is automatically optimized into
+```c++
+parameter.0 = parameter()
+parameter.1 = parameter()
+add.5 = add(parameter.0, parameter.1)
+exp.6 = exp(add.5)
+```
+
+## To-Do List
+- Make CreateParameter accept an index?
+- Store the double passed in to CreateConstant, and add getter function
+- Might need to make Rng be Binary?
+- Make Optimize recursive
+- Stylistic/syntax improvements
+- Long term: a nicer pattern matcher
+- Evaluation
