@@ -3,7 +3,8 @@
 #include "optimizer.h"
 
 void sigmoid_test() {
-  Instruction *x = CreateVariable();
+  Instruction *x = CreateParameter();
+
   Instruction *neg = CreateUnary(kNegate, x);
   Instruction *exp = CreateUnary(kExp, neg);
   Instruction *one = CreateConstant(1);
@@ -21,14 +22,13 @@ void sigmoid_test() {
 }
 
 void rewrite_test() {
-  Instruction *a = CreateVariable();
-  Instruction *b = CreateVariable();
-  Instruction *c = CreateVariable();
+  Instruction *x = CreateParameter();
+  Instruction *y = CreateParameter();
+  Instruction *z = CreateParameter();
 
-  Instruction *ab = CreateBinary(kMultiply, a, b);
-  Instruction *ac = CreateBinary(kMultiply, a, c);
-
-  Instruction *add = CreateBinary(kAdd, ab, ac);
+  Instruction *lhs = CreateBinary(kMultiply, x, y);
+  Instruction *rhs = CreateBinary(kMultiply, x, z);
+  Instruction *add = CreateBinary(kAdd, lhs, rhs);
   Instruction *exp = CreateUnary(kExp, add);
 
   Optimizer opt;
@@ -37,14 +37,13 @@ void rewrite_test() {
 }
 
 void subtract_test() {
-  Instruction *a = CreateVariable();
-  Instruction *b = CreateVariable();
-  Instruction *c = CreateVariable();
+  Instruction *x = CreateParameter();
+  Instruction *y = CreateParameter();
+  Instruction *z = CreateParameter();
 
-  Instruction *sub = CreateBinary(kSubtract, a, b);
+  Instruction *sub = CreateBinary(kSubtract, x, y);
   Instruction *neg = CreateUnary(kNegate, sub);
-
-  Instruction *add = CreateBinary(kAdd, neg, c);
+  Instruction *add = CreateBinary(kAdd, neg, z);
 
   Optimizer opt;
   opt.Optimize(neg);

@@ -14,6 +14,7 @@ enum Opcode {
   kMinimum,
   kMultiply,
   kNegate,
+  kParameter,
   kPower,
   kReal,
   kRelu,
@@ -22,15 +23,14 @@ enum Opcode {
   kSin,
   kSubtract,
   kTan,
-  kTanh,
-  kVariable
+  kTanh
 };
 
 int Arity(Opcode opcode) {
   switch (opcode) {
   case kConstant:
+  case kParameter:
   case kRng:
-  case kVariable:
     return 0;
   case kAbs:
   case kAtan2:
@@ -85,6 +85,8 @@ std::string opcode_to_string(Opcode opcode) {
     return "multiply";
   case kNegate:
     return "negate";
+  case kParameter:
+    return "parameter";
   case kPower:
     return "power";
   case kReal:
@@ -103,7 +105,5 @@ std::string opcode_to_string(Opcode opcode) {
     return "tan";
   case kTanh:
     return "tanh";
-  case kVariable:
-    return "variable";
   }
 }

@@ -60,9 +60,9 @@ public:
 
   int arity() { return operands_.size(); }
 
-  friend Instruction *CreateVariable();
-
   friend Instruction *CreateConstant(double value);
+
+  friend Instruction *CreateParameter();
 
   friend Instruction *CreateRng();
 
@@ -75,7 +75,7 @@ public:
                                  Instruction *new_instruction);
 };
 
-Instruction *CreateVariable() { return new Instruction(kVariable, {}); }
+Instruction *CreateParameter() { return new Instruction(kParameter, {}); }
 
 Instruction *CreateConstant(double value) {
   return new Instruction(kConstant, {});
