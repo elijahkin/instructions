@@ -3,7 +3,7 @@
 
 class Optimizer {
 public:
-  void Optimize(Instruction *instruction) {
+  bool Optimize(Instruction *instruction) {
     bool changed = false;
 
     switch (instruction->opcode()) {
@@ -33,8 +33,13 @@ public:
     }
 
     for (auto operand : instruction->operands()) {
-      Optimize(operand);
+      changed = Optimize(operand);
     }
+
+    if (changed) {
+      Optimize(instruction);
+    }
+    return changed;
   }
 
   bool OptimizeAdd(Instruction *add) {

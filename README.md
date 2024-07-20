@@ -23,7 +23,6 @@ exp.6 = exp(add.5)
 - Make CreateParameter accept an index?
 - Store the double passed in to CreateConstant, and add getter function
 - Might need to make Rng be Binary?
-- Make Optimize recursive
 - Stylistic/syntax improvements
 - Long term: a nicer pattern matcher
 - Evaluation
