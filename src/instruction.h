@@ -26,14 +26,17 @@ public:
   Instruction *operand(size_t i) { return operands_[i]; }
 
   std::string to_string() {
+    auto opcode_id_string = [](Instruction *instr) {
+      return opcode_to_string(instr->opcode_) + '.' +
+             std::to_string(instr->id_);
+    };
+
     std::string str;
     for (auto operand : operands()) {
       str += operand->to_string();
     }
     str += '\n';
-    str += opcode_to_string(opcode_);
-    str += '.';
-    str += std::to_string(id_);
+    str += opcode_id_string(this);
     str += " = ";
     str += opcode_to_string(opcode_);
     str += '(';
@@ -41,15 +44,11 @@ public:
       if (i != 0) {
         str += ", ";
       }
-      str += opcode_to_string(operands_[i]->opcode());
-      str += '.';
-      str += std::to_string(operands_[i]->id_);
+      str += opcode_id_string(this->operand(i));
     }
     str += ')';
     return str;
   }
-
-  int arity() { return operands_.size(); }
 
   friend Instruction *CreateConstant(double value);
 
