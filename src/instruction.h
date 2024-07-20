@@ -9,19 +9,12 @@ class Instruction {
 private:
   Opcode opcode_;
   std::vector<Instruction *> operands_;
-  std::vector<Instruction *> users_;
   int id_;
 
   Instruction(Opcode opcode, const std::vector<Instruction *> &operands) {
     opcode_ = opcode;
     operands_ = operands;
     id_ = num_created_instructions;
-
-    // add this instruction as a user of its operands
-    for (auto operand : operands_) {
-      operand->users_.push_back(this);
-    }
-
     num_created_instructions++;
   }
 
@@ -31,8 +24,6 @@ public:
   std::vector<Instruction *> operands() { return operands_; }
 
   Instruction *operand(size_t i) { return operands_[i]; }
-
-  std::vector<Instruction *> users() { return users_; }
 
   std::string to_string() {
     std::string str;
@@ -91,4 +82,9 @@ Instruction *CreateUnary(Opcode opcode, Instruction *operand) {
 Instruction *CreateBinary(Opcode opcode, Instruction *lhs, Instruction *rhs) {
   assert(Arity(opcode) == 2);
   return new Instruction(opcode, {lhs, rhs});
+}
+
+bool ReplaceInstruction(Instruction *old_instr, Instruction *new_instr) {
+  std::memcpy(old_instr, new_instr, sizeof(*new_instr));
+  return true;
 }

@@ -1,18 +1,6 @@
 #include "instruction.h"
 #include "logging.h"
 
-bool ReplaceInstruction(Instruction *old_instruction,
-                        Instruction *new_instruction) {
-  for (auto user : old_instruction->users()) {
-    for (int i = 0; i < old_instruction->arity(); ++i) {
-      if (user->operands_[i] == old_instruction) {
-        user->operands_[i] = new_instruction;
-      }
-    }
-  }
-  return true;
-}
-
 class Optimizer {
 public:
   void Optimize(Instruction *instruction) {
