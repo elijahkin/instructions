@@ -1,3 +1,4 @@
 # Ignore all files in bin except those with extensions
 bin/*
 !bin/*.*
+*.g4
