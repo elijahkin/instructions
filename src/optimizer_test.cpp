@@ -7,7 +7,7 @@ void abs_negate_test() {
   Instruction *abs = CreateUnary(kAbs, neg);
 
   Optimizer opt;
-  opt.Optimize(abs);
+  opt.Run(abs);
   assert(abs->operand(0)->opcode() == kParameter);
 }
 
@@ -18,7 +18,7 @@ void add_constants_test() {
   Instruction *add = CreateBinary(kAdd, c1, c2);
 
   Optimizer opt;
-  opt.Optimize(add);
+  opt.Run(add);
   assert(IsConstantWithValue(add, 5));
 }
 
@@ -29,7 +29,7 @@ void add_constant_lhs_test() {
   Instruction *add = CreateBinary(kAdd, c, x);
 
   Optimizer opt;
-  opt.Optimize(add);
+  opt.Run(add);
   assert(add->operand(0)->opcode() == kParameter &&
          add->operand(1)->opcode() == kConstant);
 }
@@ -41,7 +41,7 @@ void fold_add_0_test() {
   Instruction *add = CreateBinary(kAdd, x, c);
 
   Optimizer opt;
-  opt.Optimize(add);
+  opt.Run(add);
   assert(add->opcode() == kParameter);
 }
 
@@ -52,7 +52,7 @@ void dont_fold_add_1_test() {
   Instruction *add = CreateBinary(kAdd, x, c);
 
   Optimizer opt;
-  assert(!opt.Optimize(add));
+  assert(!opt.Run(add));
 }
 
 void factor_add_multiply_test() {
@@ -65,7 +65,7 @@ void factor_add_multiply_test() {
   Instruction *add = CreateBinary(kAdd, lhs, rhs);
 
   Optimizer opt;
-  opt.Optimize(add);
+  opt.Run(add);
   assert(add->opcode() == kMultiply && add->operand(1)->opcode() == kAdd);
 }
 
@@ -75,7 +75,7 @@ void add_to_multiply_test() {
   Instruction *add = CreateBinary(kAdd, x, x);
 
   Optimizer opt;
-  opt.Optimize(add);
+  opt.Run(add);
   assert(add->opcode() == kMultiply);
 }
 
@@ -88,8 +88,8 @@ void divide_divide_test() {
   Instruction *div_rhs = CreateBinary(kDivide, x, CreateBinary(kDivide, y, z));
 
   Optimizer opt;
-  opt.Optimize(div_lhs);
-  opt.Optimize(div_rhs);
+  opt.Run(div_lhs);
+  opt.Run(div_rhs);
   assert(div_lhs->operand(1)->opcode() == kMultiply &&
          div_rhs->operand(0)->opcode() == kMultiply);
 }
@@ -101,8 +101,8 @@ void exp_log_test() {
   Instruction *log_exp = CreateUnary(kLog, CreateUnary(kExp, x));
 
   Optimizer opt;
-  opt.Optimize(exp_log);
-  opt.Optimize(log_exp);
+  opt.Run(exp_log);
+  opt.Run(log_exp);
   assert(exp_log->opcode() == kParameter && log_exp->opcode() == kParameter);
 }
 
@@ -113,7 +113,7 @@ void multiply_constant_canonicalization_test() {
   Instruction *mul = CreateBinary(kMultiply, x, c);
 
   Optimizer opt;
-  opt.Optimize(mul);
+  opt.Run(mul);
   assert(mul->operand(0)->opcode() == kConstant &&
          mul->operand(1)->opcode() == kParameter);
 }
@@ -125,7 +125,7 @@ void multiply_zero_test() {
   Instruction *mul = CreateBinary(kMultiply, c, x);
 
   Optimizer opt;
-  opt.Optimize(mul);
+  opt.Run(mul);
   assert(IsConstantWithValue(mul, 0));
 }
 
@@ -136,7 +136,7 @@ void multiply_one_test() {
   Instruction *mul = CreateBinary(kMultiply, c, x);
 
   Optimizer opt;
-  opt.Optimize(mul);
+  opt.Run(mul);
   assert(mul->opcode() == kParameter);
 }
 
@@ -149,7 +149,7 @@ void multiply_abs_test() {
   Instruction *mul = CreateBinary(kMultiply, abs1, abs2);
 
   Optimizer opt;
-  opt.Optimize(mul);
+  opt.Run(mul);
   assert(mul->opcode() == kAbs && mul->operand(0)->opcode() == kMultiply);
 }
 
@@ -162,7 +162,7 @@ void multiply_exp_to_exp_add_test() {
   Instruction *mul = CreateBinary(kMultiply, exp_x, exp_y);
 
   Optimizer opt;
-  opt.Optimize(mul);
+  opt.Run(mul);
   assert(mul->opcode() == kExp && mul->operand(0)->opcode() == kAdd);
 }
 
@@ -176,7 +176,7 @@ void multiply_power_common_exponent_test() {
   Instruction *mul = CreateBinary(kMultiply, pow1, pow2);
 
   Optimizer opt;
-  opt.Optimize(mul);
+  opt.Run(mul);
   assert(mul->opcode() == kPower && mul->operand(0)->opcode() == kMultiply);
 }
 
@@ -190,7 +190,7 @@ void multiply_power_common_base_test() {
   Instruction *mul = CreateBinary(kMultiply, pow1, pow2);
 
   Optimizer opt;
-  opt.Optimize(mul);
+  opt.Run(mul);
   assert(mul->opcode() == kPower && mul->operand(1)->opcode() == kAdd);
 }
 
@@ -201,7 +201,7 @@ void double_negation_test() {
   Instruction *neg_neg_x = CreateUnary(kNegate, neg_x);
 
   Optimizer opt;
-  opt.Optimize(neg_neg_x);
+  opt.Run(neg_neg_x);
   assert(neg_neg_x->opcode() == kParameter);
 }
 
@@ -213,7 +213,7 @@ void negate_subtract_folding_test() {
   Instruction *neg = CreateUnary(kNegate, sub);
 
   Optimizer opt;
-  opt.Optimize(neg);
+  opt.Run(neg);
   assert(neg->opcode() == kSubtract);
 }
 
@@ -224,7 +224,7 @@ void pow_zero_test() {
   Instruction *pow = CreateBinary(kPower, x, c);
 
   Optimizer opt;
-  opt.Optimize(pow);
+  opt.Run(pow);
   assert(IsConstantWithValue(pow, 1));
 }
 
@@ -235,7 +235,7 @@ void pow_one_test() {
   Instruction *pow = CreateBinary(kPower, x, c);
 
   Optimizer opt;
-  opt.Optimize(pow);
+  opt.Run(pow);
   assert(pow->opcode() == kParameter);
 }
 
@@ -246,7 +246,7 @@ void square_test() {
   Instruction *pow = CreateBinary(kPower, x, c);
 
   Optimizer opt;
-  opt.Optimize(pow);
+  opt.Run(pow);
   assert(pow->opcode() == kMultiply);
 }
 
@@ -257,7 +257,7 @@ void zero_pow_test() {
   Instruction *pow = CreateBinary(kPower, c, x);
 
   Optimizer opt;
-  opt.Optimize(pow);
+  opt.Run(pow);
   assert(IsConstantWithValue(pow, 0));
 }
 
@@ -268,7 +268,7 @@ void one_pow_test() {
   Instruction *pow = CreateBinary(kPower, c, x);
 
   Optimizer opt;
-  opt.Optimize(pow);
+  opt.Run(pow);
   assert(IsConstantWithValue(pow, 1));
 }
 
@@ -281,7 +281,7 @@ void power_power_test() {
   Instruction *pow2 = CreateBinary(kPower, pow1, z);
 
   Optimizer opt;
-  opt.Optimize(pow2);
+  opt.Run(pow2);
   assert(pow2->operand(1)->opcode() == kMultiply);
 }
 
@@ -294,7 +294,7 @@ void subtract_logs_to_log_divide_test() {
   Instruction *sub = CreateBinary(kSubtract, log_x, log_y);
 
   Optimizer opt;
-  opt.Optimize(sub);
+  opt.Run(sub);
   assert(sub->opcode() == kLog && sub->operand(0)->opcode() == kDivide);
 }
 

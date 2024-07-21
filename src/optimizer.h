@@ -2,61 +2,61 @@
 
 class Optimizer {
 public:
-  bool Optimize(Instruction *instruction) {
+  bool Run(Instruction *instruction) {
     bool changed = false;
 
     switch (instruction->opcode()) {
     case kAbs:
-      changed = OptimizeAbs(instruction);
+      changed = HandleAbs(instruction);
       break;
     case kAdd:
-      changed = OptimizeAdd(instruction);
+      changed = HandleAdd(instruction);
       break;
     case kConstant:
-      changed = OptimizeConstant(instruction);
+      changed = HandleConstant(instruction);
       break;
     case kDivide:
-      changed = OptimizeDivide(instruction);
+      changed = HandleDivide(instruction);
       break;
     case kExp:
-      changed = OptimizeExp(instruction);
+      changed = HandleExp(instruction);
       break;
     case kLog:
-      changed = OptimizeLog(instruction);
+      changed = HandleLog(instruction);
       break;
     case kMaximum:
-      changed = OptimizeMaximum(instruction);
+      changed = HandleMaximum(instruction);
       break;
     case kMinimum:
-      changed = OptimizeMinimum(instruction);
+      changed = HandleMinimum(instruction);
       break;
     case kMultiply:
-      changed = OptimizeMultiply(instruction);
+      changed = HandleMultiply(instruction);
       break;
     case kNegate:
-      changed = OptimizeNegate(instruction);
+      changed = HandleNegate(instruction);
       break;
     case kPower:
-      changed = OptimizePower(instruction);
+      changed = HandlePower(instruction);
       break;
     case kSubtract:
-      changed = OptimizeSubtract(instruction);
+      changed = HandleSubtract(instruction);
       break;
     default:
       break;
     }
 
     for (auto operand : instruction->operands()) {
-      changed = Optimize(operand);
+      changed = Run(operand);
     }
 
     if (changed) {
-      Optimize(instruction);
+      Run(instruction);
     }
     return changed;
   }
 
-  bool OptimizeAbs(Instruction *abs) {
+  bool HandleAbs(Instruction *abs) {
     assert(abs->opcode() == kAbs);
 
     Instruction *operand = abs->operand(0);
@@ -68,7 +68,7 @@ public:
     return false;
   }
 
-  bool OptimizeAdd(Instruction *add) {
+  bool HandleAdd(Instruction *add) {
     assert(add->opcode() == kAdd);
 
     Instruction *lhs = add->operand(0);
@@ -120,14 +120,14 @@ public:
     return false;
   }
 
-  bool OptimizeConstant(Instruction *constant) {
+  bool HandleConstant(Instruction *constant) {
     assert(constant->opcode() == kConstant);
 
     // TODO if all operands are constants, fold
     return false;
   }
 
-  bool OptimizeDivide(Instruction *divide) {
+  bool HandleDivide(Instruction *divide) {
     assert(divide->opcode() == kDivide);
 
     Instruction *lhs = divide->operand(0);
@@ -152,7 +152,7 @@ public:
     return false;
   }
 
-  bool OptimizeExp(Instruction *exp) {
+  bool HandleExp(Instruction *exp) {
     assert(exp->opcode() == kExp);
 
     Instruction *operand = exp->operand(0);
@@ -164,7 +164,7 @@ public:
     return false;
   }
 
-  bool OptimizeLog(Instruction *log) {
+  bool HandleLog(Instruction *log) {
     assert(log->opcode() == kLog);
 
     Instruction *operand = log->operand(0);
@@ -176,7 +176,7 @@ public:
     return false;
   }
 
-  bool OptimizeMaximum(Instruction *maximum) {
+  bool HandleMaximum(Instruction *maximum) {
     assert(maximum->opcode() == kMaximum);
 
     // TODO max(f(x), f(y)) --> f(max(x, y))
@@ -187,14 +187,14 @@ public:
     return false;
   }
 
-  bool OptimizeMinimum(Instruction *minimum) {
+  bool HandleMinimum(Instruction *minimum) {
     assert(minimum->opcode() == kMinimum);
 
     // TODO monotonic rewrites as with maximum
     return false;
   }
 
-  bool OptimizeMultiply(Instruction *multiply) {
+  bool HandleMultiply(Instruction *multiply) {
     assert(multiply->opcode() == kMultiply);
 
     Instruction *lhs = multiply->operand(0);
@@ -259,7 +259,7 @@ public:
     return false;
   }
 
-  bool OptimizeNegate(Instruction *negate) {
+  bool HandleNegate(Instruction *negate) {
     assert(negate->opcode() == kNegate);
 
     Instruction *operand = negate->operand(0);
@@ -278,7 +278,7 @@ public:
     return false;
   }
 
-  bool OptimizePower(Instruction *power) {
+  bool HandlePower(Instruction *power) {
     assert(power->opcode() == kPower);
 
     Instruction *lhs = power->operand(0);
@@ -318,7 +318,7 @@ public:
     return false;
   }
 
-  bool OptimizeSubtract(Instruction *subtract) {
+  bool HandleSubtract(Instruction *subtract) {
     assert(subtract->opcode() == kSubtract);
 
     Instruction *lhs = subtract->operand(0);
