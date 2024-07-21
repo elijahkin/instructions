@@ -75,6 +75,34 @@ void multiply_exp_to_exp_add_test() {
   assert(mul->opcode() == kExp && mul->operand(0)->opcode() == kAdd);
 }
 
+void multiply_power_common_exponent_test() {
+  Instruction *x = CreateParameter();
+  Instruction *y = CreateParameter();
+  Instruction *z = CreateParameter();
+
+  Instruction *pow1 = CreateBinary(kPower, x, z);
+  Instruction *pow2 = CreateBinary(kPower, y, z);
+  Instruction *mul = CreateBinary(kMultiply, pow1, pow2);
+
+  Optimizer opt;
+  opt.Optimize(mul);
+  assert(mul->opcode() == kPower && mul->operand(0)->opcode() == kMultiply);
+}
+
+void multiply_power_common_base_test() {
+  Instruction *x = CreateParameter();
+  Instruction *y = CreateParameter();
+  Instruction *z = CreateParameter();
+
+  Instruction *pow1 = CreateBinary(kPower, x, y);
+  Instruction *pow2 = CreateBinary(kPower, x, z);
+  Instruction *mul = CreateBinary(kMultiply, pow1, pow2);
+
+  Optimizer opt;
+  opt.Optimize(mul);
+  assert(mul->opcode() == kPower && mul->operand(1)->opcode() == kAdd);
+}
+
 void double_negation_test() {
   Instruction *x = CreateParameter();
 
@@ -98,6 +126,19 @@ void negate_subtract_folding_test() {
   assert(neg->opcode() == kSubtract);
 }
 
+void power_power_test() {
+  Instruction *x = CreateParameter();
+  Instruction *y = CreateParameter();
+  Instruction *z = CreateParameter();
+
+  Instruction *pow1 = CreateBinary(kPower, x, y);
+  Instruction *pow2 = CreateBinary(kPower, pow1, z);
+
+  Optimizer opt;
+  opt.Optimize(pow2);
+  assert(pow2->operand(1)->opcode() == kMultiply);
+}
+
 void subtract_logs_to_log_divide_test() {
   Instruction *x = CreateParameter();
   Instruction *y = CreateParameter();
@@ -118,8 +159,11 @@ int main() {
   divide_divide_test();
   exp_log_test();
   multiply_exp_to_exp_add_test();
+  multiply_power_common_exponent_test();
+  multiply_power_common_base_test();
   double_negation_test();
   negate_subtract_folding_test();
+  power_power_test();
   subtract_logs_to_log_divide_test();
   return 0;
 }

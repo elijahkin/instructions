@@ -71,6 +71,8 @@ public:
   bool OptimizeAdd(Instruction *add) {
     assert(add->opcode() == kAdd);
 
+    // TODO x+0 --> x
+
     if (add->operand(0)->opcode() == kMultiply &&
         add->operand(1)->opcode() == kMultiply) {
       if (add->operand(0)->operand(0) == add->operand(1)->operand(0)) {
@@ -95,8 +97,6 @@ public:
       return ReplaceInstruction(
           add, CreateBinary(kMultiply, add->operand(0), CreateConstant(2)));
     }
-
-    // TODO x+0 --> x
     return false;
   }
 
@@ -172,6 +172,8 @@ public:
   bool OptimizeMultiply(Instruction *multiply) {
     assert(multiply->opcode() == kMultiply);
 
+    // TODO 0*x --> x
+
     // TODO 1*x --> x
 
     if (multiply->operand(0)->opcode() == kExp &&
@@ -181,6 +183,30 @@ public:
           multiply,
           CreateUnary(kExp, CreateBinary(kAdd, multiply->operand(0)->operand(0),
                                          multiply->operand(1)->operand(0))));
+    }
+
+    if (multiply->operand(0)->opcode() == kPower &&
+        multiply->operand(1)->opcode() == kPower) {
+      if (multiply->operand(0)->operand(1) ==
+          multiply->operand(1)->operand(1)) {
+        VLOG(10) << "pow(x,z)*pow(y,z) --> pow(x*y,z)";
+        return ReplaceInstruction(
+            multiply,
+            CreateBinary(kPower,
+                         CreateBinary(kMultiply,
+                                      multiply->operand(0)->operand(0),
+                                      multiply->operand(1)->operand(0)),
+                         multiply->operand(0)->operand(1)));
+      }
+      if (multiply->operand(0)->operand(0) ==
+          multiply->operand(1)->operand(0)) {
+        VLOG(10) << "pow(x,y)*pow(x,z) --> pow(x,y+z)";
+        return ReplaceInstruction(
+            multiply,
+            CreateBinary(kPower, multiply->operand(0)->operand(0),
+                         CreateBinary(kAdd, multiply->operand(0)->operand(1),
+                                      multiply->operand(1)->operand(1))));
+      }
     }
     return false;
   }
@@ -215,11 +241,14 @@ public:
 
     // TODO pow(1,x) --> 1
 
-    // TODO pow(x,y)*pow(x,z) --> pow(x,y+z)
-
-    // TODO pow(pow(x,y),z) --> pow(x,y*z)
-
-    // TODO pow(x,z)*pow(y,z) --> pow(x*y,z)
+    if (power->operand(0)->opcode() == kPower) {
+      VLOG(10) << "pow(pow(x,y),z) --> pow(x,y*z)";
+      return ReplaceInstruction(
+          power,
+          CreateBinary(kPower, power->operand(0)->operand(0),
+                       CreateBinary(kMultiply, power->operand(0)->operand(1),
+                                    power->operand(1))));
+    }
     return false;
   }
 
