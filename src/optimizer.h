@@ -60,10 +60,11 @@ public:
   bool OptimizeAbs(Instruction *abs) {
     assert(abs->opcode() == kAbs);
 
-    if (abs->operand(0)->opcode() == kNegate) {
+    Instruction *operand = abs->operand(0);
+
+    if (operand->opcode() == kNegate) {
       VLOG(10) << "|-x| --> |x|";
-      return ReplaceInstruction(abs,
-                                CreateUnary(kAbs, abs->operand(0)->operand(0)));
+      return ReplaceInstruction(abs, CreateUnary(kAbs, operand->operand(0)));
     }
     return false;
   }
@@ -71,31 +72,33 @@ public:
   bool OptimizeAdd(Instruction *add) {
     assert(add->opcode() == kAdd);
 
+    Instruction *lhs = add->operand(0);
+    Instruction *rhs = add->operand(1);
+
     // TODO x+0 --> x
 
-    if (add->operand(0)->opcode() == kMultiply &&
-        add->operand(1)->opcode() == kMultiply) {
-      if (add->operand(0)->operand(0) == add->operand(1)->operand(0)) {
+    if (lhs->opcode() == kMultiply && rhs->opcode() == kMultiply) {
+      if (lhs->operand(0) == rhs->operand(0)) {
         VLOG(10) << "xy+xz --> x(y+z)";
         return ReplaceInstruction(
-            add, CreateBinary(kMultiply, add->operand(0)->operand(0),
-                              CreateBinary(kAdd, add->operand(0)->operand(1),
-                                           add->operand(1)->operand(1))));
+            add,
+            CreateBinary(kMultiply, lhs->operand(0),
+                         CreateBinary(kAdd, lhs->operand(1), rhs->operand(1))));
       }
-      if (add->operand(0)->operand(1) == add->operand(1)->operand(1)) {
+      if (lhs->operand(1) == rhs->operand(1)) {
         VLOG(10) << "xz+yz --> (x+y)z";
         return ReplaceInstruction(
-            add, CreateBinary(kMultiply,
-                              CreateBinary(kAdd, add->operand(0)->operand(0),
-                                           add->operand(1)->operand(0)),
-                              add->operand(0)->operand(1)));
+            add,
+            CreateBinary(kMultiply,
+                         CreateBinary(kAdd, lhs->operand(0), rhs->operand(0)),
+                         lhs->operand(1)));
       }
     }
 
-    if (add->operand(0) == add->operand(1)) {
+    if (lhs == rhs) {
       VLOG(10) << "x+x --> 2*x";
       return ReplaceInstruction(
-          add, CreateBinary(kMultiply, add->operand(0), CreateConstant(2)));
+          add, CreateBinary(kMultiply, lhs, CreateConstant(2)));
     }
     return false;
   }
@@ -110,23 +113,23 @@ public:
   bool OptimizeDivide(Instruction *divide) {
     assert(divide->opcode() == kDivide);
 
+    Instruction *lhs = divide->operand(0);
+    Instruction *rhs = divide->operand(1);
+
     // TODO x / constant --> x * constant
 
-    if (divide->operand(0)->opcode() == kDivide) {
+    if (lhs->opcode() == kDivide) {
       VLOG(10) << "(x/y)/z --> x/(y*z)";
       return ReplaceInstruction(
-          divide,
-          CreateBinary(kDivide, divide->operand(0)->operand(0),
-                       CreateBinary(kMultiply, divide->operand(0)->operand(1),
-                                    divide->operand(1))));
+          divide, CreateBinary(kDivide, lhs->operand(0),
+                               CreateBinary(kMultiply, lhs->operand(1), rhs)));
     }
-    if (divide->operand(1)->opcode() == kDivide) {
+    if (rhs->opcode() == kDivide) {
       VLOG(10) << "x/(y/z) --> (x*z)/y";
       return ReplaceInstruction(
-          divide, CreateBinary(kDivide,
-                               CreateBinary(kMultiply, divide->operand(0),
-                                            divide->operand(1)->operand(1)),
-                               divide->operand(1)->operand(0)));
+          divide,
+          CreateBinary(kDivide, CreateBinary(kMultiply, lhs, rhs->operand(1)),
+                       rhs->operand(0)));
     }
     return false;
   }
@@ -134,9 +137,11 @@ public:
   bool OptimizeExp(Instruction *exp) {
     assert(exp->opcode() == kExp);
 
-    if (exp->operand(0)->opcode() == kLog) {
+    Instruction *operand = exp->operand(0);
+
+    if (operand->opcode() == kLog) {
       VLOG(10) << "exp(log(x)) --> x";
-      return ReplaceInstruction(exp, exp->operand(0)->operand(0));
+      return ReplaceInstruction(exp, operand->operand(0));
     }
     return false;
   }
@@ -144,9 +149,11 @@ public:
   bool OptimizeLog(Instruction *log) {
     assert(log->opcode() == kLog);
 
-    if (log->operand(0)->opcode() == kExp) {
+    Instruction *operand = log->operand(0);
+
+    if (operand->opcode() == kExp) {
       VLOG(10) << "log(exp(x)) --> x";
-      return ReplaceInstruction(log, log->operand(0)->operand(0));
+      return ReplaceInstruction(log, operand->operand(0));
     }
     return false;
   }
@@ -172,40 +179,35 @@ public:
   bool OptimizeMultiply(Instruction *multiply) {
     assert(multiply->opcode() == kMultiply);
 
+    Instruction *lhs = multiply->operand(0);
+    Instruction *rhs = multiply->operand(1);
+
     // TODO 0*x --> x
 
     // TODO 1*x --> x
 
-    if (multiply->operand(0)->opcode() == kExp &&
-        multiply->operand(1)->opcode() == kExp) {
+    if (lhs->opcode() == kExp && rhs->opcode() == kExp) {
       VLOG(10) << "exp(x)*exp(y) --> exp(x+y)";
       return ReplaceInstruction(
-          multiply,
-          CreateUnary(kExp, CreateBinary(kAdd, multiply->operand(0)->operand(0),
-                                         multiply->operand(1)->operand(0))));
+          multiply, CreateUnary(kExp, CreateBinary(kAdd, lhs->operand(0),
+                                                   rhs->operand(0))));
     }
 
-    if (multiply->operand(0)->opcode() == kPower &&
-        multiply->operand(1)->opcode() == kPower) {
-      if (multiply->operand(0)->operand(1) ==
-          multiply->operand(1)->operand(1)) {
+    if (lhs->opcode() == kPower && rhs->opcode() == kPower) {
+      if (lhs->operand(1) == rhs->operand(1)) {
         VLOG(10) << "pow(x,z)*pow(y,z) --> pow(x*y,z)";
         return ReplaceInstruction(
-            multiply,
-            CreateBinary(kPower,
-                         CreateBinary(kMultiply,
-                                      multiply->operand(0)->operand(0),
-                                      multiply->operand(1)->operand(0)),
-                         multiply->operand(0)->operand(1)));
+            multiply, CreateBinary(kPower,
+                                   CreateBinary(kMultiply, lhs->operand(0),
+                                                rhs->operand(0)),
+                                   lhs->operand(1)));
       }
-      if (multiply->operand(0)->operand(0) ==
-          multiply->operand(1)->operand(0)) {
+      if (lhs->operand(0) == rhs->operand(0)) {
         VLOG(10) << "pow(x,y)*pow(x,z) --> pow(x,y+z)";
         return ReplaceInstruction(
             multiply,
-            CreateBinary(kPower, multiply->operand(0)->operand(0),
-                         CreateBinary(kAdd, multiply->operand(0)->operand(1),
-                                      multiply->operand(1)->operand(1))));
+            CreateBinary(kPower, lhs->operand(0),
+                         CreateBinary(kAdd, lhs->operand(1), rhs->operand(1))));
       }
     }
     return false;
@@ -214,22 +216,27 @@ public:
   bool OptimizeNegate(Instruction *negate) {
     assert(negate->opcode() == kNegate);
 
-    if (negate->operand(0)->opcode() == kNegate) {
+    Instruction *operand = negate->operand(0);
+
+    if (operand->opcode() == kNegate) {
       VLOG(10) << "-(-x) --> x";
-      return ReplaceInstruction(negate, negate->operand(0)->operand(0));
+      return ReplaceInstruction(negate, operand->operand(0));
     }
 
-    if (negate->operand(0)->opcode() == kSubtract) {
+    if (operand->opcode() == kSubtract) {
       VLOG(10) << "-(x-y) --> y-x";
       return ReplaceInstruction(
-          negate, CreateBinary(kSubtract, negate->operand(0)->operand(1),
-                               negate->operand(0)->operand(0)));
+          negate,
+          CreateBinary(kSubtract, operand->operand(1), operand->operand(0)));
     }
     return false;
   }
 
   bool OptimizePower(Instruction *power) {
     assert(power->opcode() == kPower);
+
+    Instruction *lhs = power->operand(0);
+    Instruction *rhs = power->operand(1);
 
     // TODO pow(x,0) --> 1
 
@@ -241,13 +248,11 @@ public:
 
     // TODO pow(1,x) --> 1
 
-    if (power->operand(0)->opcode() == kPower) {
+    if (lhs->opcode() == kPower) {
       VLOG(10) << "pow(pow(x,y),z) --> pow(x,y*z)";
       return ReplaceInstruction(
-          power,
-          CreateBinary(kPower, power->operand(0)->operand(0),
-                       CreateBinary(kMultiply, power->operand(0)->operand(1),
-                                    power->operand(1))));
+          power, CreateBinary(kPower, lhs->operand(0),
+                              CreateBinary(kMultiply, lhs->operand(1), rhs)));
     }
     return false;
   }
@@ -255,14 +260,14 @@ public:
   bool OptimizeSubtract(Instruction *subtract) {
     assert(subtract->opcode() == kSubtract);
 
-    if (subtract->operand(0)->opcode() == kLog &&
-        subtract->operand(0)->opcode() == kLog) {
+    Instruction *lhs = subtract->operand(0);
+    Instruction *rhs = subtract->operand(1);
+
+    if (lhs->opcode() == kLog && rhs->opcode() == kLog) {
       VLOG(10) << "log(x)-log(y) --> log(x/y)";
       return ReplaceInstruction(
-          subtract,
-          CreateUnary(kLog,
-                      CreateBinary(kDivide, subtract->operand(0)->operand(0),
-                                   subtract->operand(1)->operand(0))));
+          subtract, CreateUnary(kLog, CreateBinary(kDivide, lhs->operand(0),
+                                                   rhs->operand(0))));
     }
     return false;
   }
