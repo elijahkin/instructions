@@ -1,5 +1,16 @@
 #include "optimizer.h"
 
+void abs_negate_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *neg = CreateUnary(kNegate, x);
+  Instruction *abs = CreateUnary(kAbs, neg);
+
+  Optimizer opt;
+  opt.Optimize(abs);
+  assert(abs->operand(0)->opcode() == kParameter);
+}
+
 void factor_add_multiply_test() {
   Instruction *x = CreateParameter();
   Instruction *y = CreateParameter();
@@ -24,20 +35,31 @@ void add_to_multiply_test() {
   assert(add->opcode() == kMultiply);
 }
 
-void exp_log_test() {
+void divide_divide_test() {
   Instruction *x = CreateParameter();
   Instruction *y = CreateParameter();
+  Instruction *z = CreateParameter();
 
-  Instruction *log_x = CreateUnary(kLog, x);
-  Instruction *exp_log_x = CreateUnary(kExp, log_x);
-  Instruction *exp_y = CreateUnary(kExp, y);
-  Instruction *log_exp_y = CreateUnary(kLog, exp_y);
-  Instruction *add = CreateBinary(kAdd, exp_log_x, log_exp_y);
+  Instruction *div_lhs = CreateBinary(kDivide, CreateBinary(kDivide, x, y), z);
+  Instruction *div_rhs = CreateBinary(kDivide, x, CreateBinary(kDivide, y, z));
 
   Optimizer opt;
-  opt.Optimize(add);
-  assert(add->operand(0)->opcode() == kParameter &&
-         add->operand(1)->opcode() == kParameter);
+  opt.Optimize(div_lhs);
+  opt.Optimize(div_rhs);
+  assert(div_lhs->operand(1)->opcode() == kMultiply &&
+         div_rhs->operand(0)->opcode() == kMultiply);
+}
+
+void exp_log_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *exp_log = CreateUnary(kExp, CreateUnary(kLog, x));
+  Instruction *log_exp = CreateUnary(kLog, CreateUnary(kExp, x));
+
+  Optimizer opt;
+  opt.Optimize(exp_log);
+  opt.Optimize(log_exp);
+  assert(exp_log->opcode() == kParameter && log_exp->opcode() == kParameter);
 }
 
 void multiply_exp_to_exp_add_test() {
@@ -90,8 +112,10 @@ void subtract_logs_to_log_divide_test() {
 }
 
 int main() {
+  abs_negate_test();
   factor_add_multiply_test();
   add_to_multiply_test();
+  divide_divide_test();
   exp_log_test();
   multiply_exp_to_exp_add_test();
   double_negation_test();

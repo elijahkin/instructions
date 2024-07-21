@@ -7,11 +7,17 @@ public:
     bool changed = false;
 
     switch (instruction->opcode()) {
+    case kAbs:
+      changed = OptimizeAbs(instruction);
+      break;
     case kAdd:
       changed = OptimizeAdd(instruction);
       break;
     case kConstant:
       changed = OptimizeConstant(instruction);
+      break;
+    case kDivide:
+      changed = OptimizeDivide(instruction);
       break;
     case kExp:
       changed = OptimizeExp(instruction);
@@ -19,11 +25,20 @@ public:
     case kLog:
       changed = OptimizeLog(instruction);
       break;
+    case kMaximum:
+      changed = OptimizeMaximum(instruction);
+      break;
+    case kMinimum:
+      changed = OptimizeMinimum(instruction);
+      break;
     case kMultiply:
       changed = OptimizeMultiply(instruction);
       break;
     case kNegate:
       changed = OptimizeNegate(instruction);
+      break;
+    case kPower:
+      changed = OptimizePower(instruction);
       break;
     case kSubtract:
       changed = OptimizeSubtract(instruction);
@@ -40,6 +55,17 @@ public:
       Optimize(instruction);
     }
     return changed;
+  }
+
+  bool OptimizeAbs(Instruction *abs) {
+    assert(abs->opcode() == kAbs);
+
+    if (abs->operand(0)->opcode() == kNegate) {
+      VLOG(10) << "|-x| --> |x|";
+      return ReplaceInstruction(abs,
+                                CreateUnary(kAbs, abs->operand(0)->operand(0)));
+    }
+    return false;
   }
 
   bool OptimizeAdd(Instruction *add) {
@@ -76,7 +102,32 @@ public:
 
   bool OptimizeConstant(Instruction *constant) {
     assert(constant->opcode() == kConstant);
+
     // TODO if all operands are constants, fold
+    return false;
+  }
+
+  bool OptimizeDivide(Instruction *divide) {
+    assert(divide->opcode() == kDivide);
+
+    // TODO x / constant --> x * constant
+
+    if (divide->operand(0)->opcode() == kDivide) {
+      VLOG(10) << "(x/y)/z --> x/(y*z)";
+      return ReplaceInstruction(
+          divide,
+          CreateBinary(kDivide, divide->operand(0)->operand(0),
+                       CreateBinary(kMultiply, divide->operand(0)->operand(1),
+                                    divide->operand(1))));
+    }
+    if (divide->operand(1)->opcode() == kDivide) {
+      VLOG(10) << "x/(y/z) --> (x*z)/y";
+      return ReplaceInstruction(
+          divide, CreateBinary(kDivide,
+                               CreateBinary(kMultiply, divide->operand(0),
+                                            divide->operand(1)->operand(1)),
+                               divide->operand(1)->operand(0)));
+    }
     return false;
   }
 
@@ -100,8 +151,27 @@ public:
     return false;
   }
 
+  bool OptimizeMaximum(Instruction *maximum) {
+    assert(maximum->opcode() == kMaximum);
+
+    // TODO max(f(x), f(y)) --> f(max(x, y))
+    // where f is monotonically increasing
+
+    // TODO max(f(x), f(y)) --> f(min(x, y))
+    // where f is monotonically decreasing
+    return false;
+  }
+
+  bool OptimizeMinimum(Instruction *minimum) {
+    assert(minimum->opcode() == kMinimum);
+
+    // TODO monotonic rewrites as with maximum
+    return false;
+  }
+
   bool OptimizeMultiply(Instruction *multiply) {
     assert(multiply->opcode() == kMultiply);
+
     // TODO 1*x --> x
 
     if (multiply->operand(0)->opcode() == kExp &&
@@ -112,7 +182,6 @@ public:
           CreateUnary(kExp, CreateBinary(kAdd, multiply->operand(0)->operand(0),
                                          multiply->operand(1)->operand(0))));
     }
-
     return false;
   }
 
@@ -133,6 +202,27 @@ public:
     return false;
   }
 
+  bool OptimizePower(Instruction *power) {
+    assert(power->opcode() == kPower);
+
+    // TODO pow(x,0) --> 1
+
+    // TODO pow(x,1) --> x
+
+    // TODO pow(x,2) --> x*x
+
+    // TODO pow(0,x) --> 0
+
+    // TODO pow(1,x) --> 1
+
+    // TODO pow(x,y)*pow(x,z) --> pow(x,y+z)
+
+    // TODO pow(pow(x,y),z) --> pow(x,y*z)
+
+    // TODO pow(x,z)*pow(y,z) --> pow(x*y,z)
+    return false;
+  }
+
   bool OptimizeSubtract(Instruction *subtract) {
     assert(subtract->opcode() == kSubtract);
 
@@ -145,7 +235,6 @@ public:
                       CreateBinary(kDivide, subtract->operand(0)->operand(0),
                                    subtract->operand(1)->operand(0))));
     }
-
     return false;
   }
 };
