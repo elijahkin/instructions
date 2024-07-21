@@ -62,6 +62,8 @@ public:
 
   friend bool ReplaceInstruction(Instruction *old_instruction,
                                  Instruction *new_instruction);
+
+  friend bool IsConstantWithValue(Instruction *instruction, double value);
 };
 
 Instruction *CreateParameter() { return new Instruction(kParameter, {}); }
@@ -78,6 +80,7 @@ Instruction *CreateBinary(Opcode opcode, Instruction *lhs, Instruction *rhs) {
   return new Instruction(opcode, {lhs, rhs});
 }
 
+// TODO maybe use std::optional for value instead of creating a new class
 class ConstantInstruction : public Instruction {
 private:
   double value_;
@@ -94,6 +97,11 @@ public:
 
 Instruction *CreateConstant(double value) {
   return new ConstantInstruction(value);
+}
+
+bool IsConstantWithValue(Instruction *instruction, double value) {
+  return (instruction->opcode() == kConstant) &&
+         (static_cast<ConstantInstruction *>(instruction)->value() == value);
 }
 
 bool ReplaceInstruction(Instruction *old_instr, Instruction *new_instr) {

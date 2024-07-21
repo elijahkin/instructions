@@ -141,6 +141,7 @@ public:
           divide, CreateBinary(kDivide, lhs->operand(0),
                                CreateBinary(kMultiply, lhs->operand(1), rhs)));
     }
+
     if (rhs->opcode() == kDivide) {
       VLOG(10) << "x/(y/z) --> (x*z)/y";
       return ReplaceInstruction(
@@ -199,9 +200,37 @@ public:
     Instruction *lhs = multiply->operand(0);
     Instruction *rhs = multiply->operand(1);
 
-    // TODO 0*x --> x
+    // TODO guy
 
-    // TODO 1*x --> x
+    // Canonicalize multiply with one constant operand to make the constant the
+    // rhs
+    // TODO This can be unified with the similar rewrite for add for commutative
+    // binary ops
+    if (rhs->opcode() == kConstant) {
+      VLOG(10) << "x*c --> c*x";
+      return ReplaceInstruction(multiply, CreateBinary(kMultiply, rhs, lhs));
+    }
+
+    if (IsConstantWithValue(lhs, 0)) {
+      VLOG(10) << "0*x --> x";
+      return ReplaceInstruction(multiply, lhs);
+    }
+
+    // TODO This can be combined with the similar identity element rewrite for
+    // add
+    if (IsConstantWithValue(lhs, 1)) {
+      VLOG(10) << "1*x --> x";
+      return ReplaceInstruction(multiply, rhs);
+    }
+
+    // TODO The following two rewrites can be unified into a single rewrite
+    // targeting homomorphisms
+    if (lhs->opcode() == kAbs && rhs->opcode() == kAbs) {
+      VLOG(10) << "|x|*|y| --> |x*y|";
+      return ReplaceInstruction(
+          multiply, CreateUnary(kAbs, CreateBinary(kMultiply, lhs->operand(0),
+                                                   rhs->operand(0))));
+    }
 
     if (lhs->opcode() == kExp && rhs->opcode() == kExp) {
       VLOG(10) << "exp(x)*exp(y) --> exp(x+y)";
@@ -255,15 +284,30 @@ public:
     Instruction *lhs = power->operand(0);
     Instruction *rhs = power->operand(1);
 
-    // TODO pow(x,0) --> 1
+    if (IsConstantWithValue(rhs, 0)) {
+      VLOG(10) << "pow(x,0) --> 1";
+      return ReplaceInstruction(power, CreateConstant(1));
+    }
 
-    // TODO pow(x,1) --> x
+    if (IsConstantWithValue(rhs, 1)) {
+      VLOG(10) << "pow(x,1) --> x";
+      return ReplaceInstruction(power, lhs);
+    }
 
-    // TODO pow(x,2) --> x*x
+    if (IsConstantWithValue(rhs, 2)) {
+      VLOG(10) << "pow(x,2) --> x*x";
+      return ReplaceInstruction(power, CreateBinary(kMultiply, lhs, lhs));
+    }
 
-    // TODO pow(0,x) --> 0
+    if (IsConstantWithValue(lhs, 0)) {
+      VLOG(10) << "pow(0,x) --> 0";
+      return ReplaceInstruction(power, lhs);
+    }
 
-    // TODO pow(1,x) --> 1
+    if (IsConstantWithValue(lhs, 1)) {
+      VLOG(10) << "pow(1,x) --> 1";
+      return ReplaceInstruction(power, lhs);
+    }
 
     if (lhs->opcode() == kPower) {
       VLOG(10) << "pow(pow(x,y),z) --> pow(x,y*z)";
