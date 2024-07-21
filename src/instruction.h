@@ -1,12 +1,13 @@
 #include <cassert>
 #include <vector>
 
+#include "logging.h"
 #include "opcode.h"
 
 int num_created_instructions = 0;
 
 class Instruction {
-private:
+protected:
   Opcode opcode_;
   std::vector<Instruction *> operands_;
   int id_;
@@ -50,8 +51,6 @@ public:
     return str;
   }
 
-  friend Instruction *CreateConstant(double value);
-
   friend Instruction *CreateParameter();
 
   friend Instruction *CreateRng();
@@ -67,10 +66,6 @@ public:
 
 Instruction *CreateParameter() { return new Instruction(kParameter, {}); }
 
-Instruction *CreateConstant(double value) {
-  return new Instruction(kConstant, {});
-}
-
 Instruction *CreateRng() { return new Instruction(kRng, {}); }
 
 Instruction *CreateUnary(Opcode opcode, Instruction *operand) {
@@ -83,7 +78,29 @@ Instruction *CreateBinary(Opcode opcode, Instruction *lhs, Instruction *rhs) {
   return new Instruction(opcode, {lhs, rhs});
 }
 
+class ConstantInstruction : public Instruction {
+private:
+  double value_;
+
+  ConstantInstruction(double value) : Instruction(kConstant, {}) {
+    value_ = value;
+  }
+
+public:
+  double value() { return value_; }
+
+  friend Instruction *CreateConstant(double value);
+};
+
+Instruction *CreateConstant(double value) {
+  return new ConstantInstruction(value);
+}
+
 bool ReplaceInstruction(Instruction *old_instr, Instruction *new_instr) {
-  std::memcpy(old_instr, new_instr, sizeof(*new_instr));
+  int num_bytes = sizeof(Instruction);
+  if (new_instr->opcode() == kConstant) {
+    num_bytes = sizeof(ConstantInstruction);
+  }
+  std::memcpy(old_instr, new_instr, num_bytes);
   return true;
 }

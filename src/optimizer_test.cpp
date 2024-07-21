@@ -11,6 +11,51 @@ void abs_negate_test() {
   assert(abs->operand(0)->opcode() == kParameter);
 }
 
+void add_constants_test() {
+  Instruction *c1 = CreateConstant(2);
+  Instruction *c2 = CreateConstant(3);
+
+  Instruction *add = CreateBinary(kAdd, c1, c2);
+
+  Optimizer opt;
+  opt.Optimize(add);
+  assert(add->opcode() == kConstant &&
+         static_cast<ConstantInstruction *>(add)->value() == 5);
+}
+
+void add_constant_lhs_test() {
+  Instruction *c = CreateConstant(1);
+  Instruction *x = CreateParameter();
+
+  Instruction *add = CreateBinary(kAdd, c, x);
+
+  Optimizer opt;
+  opt.Optimize(add);
+  assert(add->operand(0)->opcode() == kParameter &&
+         add->operand(1)->opcode() == kConstant);
+}
+
+void fold_add_0_test() {
+  Instruction *x = CreateParameter();
+  Instruction *c = CreateConstant(0);
+
+  Instruction *add = CreateBinary(kAdd, x, c);
+
+  Optimizer opt;
+  opt.Optimize(add);
+  assert(add->opcode() == kParameter);
+}
+
+void dont_fold_add_1_test() {
+  Instruction *x = CreateParameter();
+  Instruction *c = CreateConstant(1);
+
+  Instruction *add = CreateBinary(kAdd, x, c);
+
+  Optimizer opt;
+  assert(!opt.Optimize(add));
+}
+
 void factor_add_multiply_test() {
   Instruction *x = CreateParameter();
   Instruction *y = CreateParameter();
@@ -154,6 +199,10 @@ void subtract_logs_to_log_divide_test() {
 
 int main() {
   abs_negate_test();
+  add_constants_test();
+  add_constant_lhs_test();
+  fold_add_0_test();
+  dont_fold_add_1_test();
   factor_add_multiply_test();
   add_to_multiply_test();
   divide_divide_test();

@@ -1,5 +1,4 @@
 #include "instruction.h"
-#include "logging.h"
 
 class Optimizer {
 public:
@@ -75,7 +74,25 @@ public:
     Instruction *lhs = add->operand(0);
     Instruction *rhs = add->operand(1);
 
-    // TODO x+0 --> x
+    if (lhs->opcode() == kConstant && rhs->opcode() == kConstant) {
+      VLOG(10) << "c+c --> c";
+      return ReplaceInstruction(
+          add,
+          CreateConstant(static_cast<ConstantInstruction *>(lhs)->value() +
+                         static_cast<ConstantInstruction *>(rhs)->value()));
+    }
+
+    // Canonicalize add with one constant operand to make the constant the rhs
+    if (lhs->opcode() == kConstant) {
+      VLOG(10) << "c+x --> x+c";
+      return ReplaceInstruction(add, CreateBinary(kAdd, rhs, lhs));
+    }
+
+    if (rhs->opcode() == kConstant &&
+        static_cast<ConstantInstruction *>(rhs)->value() == 0) {
+      VLOG(10) << "x+0 --> x";
+      return ReplaceInstruction(add, lhs);
+    }
 
     if (lhs->opcode() == kMultiply && rhs->opcode() == kMultiply) {
       if (lhs->operand(0) == rhs->operand(0)) {
