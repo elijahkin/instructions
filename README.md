@@ -20,9 +20,16 @@ exp.6 = exp(add.5)
 ```
 
 ## To-Do List
-- Make CreateParameter accept an index?
-- Store the double passed in to CreateConstant, and add getter function
-- Might need to make Rng be Binary?
-- Stylistic/syntax improvements
-- Long term: a nicer pattern matcher
-- Evaluation
+- Major:
+  - More optimization passes
+  - Evaluator
+  - Shape and matrix operations
+  - Graph visualizer
+  - Autograd
+  - Nicer pattern matching
+- Minor:
+  - Better testing syntax
+  - Prettier printing
+  - Fix bug with fold_add_0_test where a fixed point is not reached
+  - Make CreateParameter accept an index, a la XLA
+  - Make Rng Binary?
