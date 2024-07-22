@@ -73,7 +73,9 @@ public:
       return ReplaceInstruction(unary, CreateConstant(Evaluate(unary)));
     }
 
-    // Inverse op cancellation
+    // TODO Inverse op cancellation
+
+    // TODO Even/odd movement
     return false;
   }
 
@@ -88,9 +90,7 @@ public:
     }
 
     // Canonicalize constants to be on the lhs for commutative ops
-    bool commutative =
-        (binary->opcode() == kAdd) | (binary->opcode() == kMultiply);
-    if (commutative && rhs->opcode() == kConstant) {
+    if (IsCommutative(binary->opcode()) && rhs->opcode() == kConstant) {
       VLOG(10) << "Canonicalizing constant to lhs of commutative binary op";
       return ReplaceInstruction(binary,
                                 CreateBinary(binary->opcode(), rhs, lhs));
@@ -206,18 +206,49 @@ public:
   bool HandleMaximum(Instruction *maximum) {
     assert(maximum->opcode() == kMaximum);
 
-    // TODO max(f(x), f(y)) --> f(max(x, y))
-    // where f is monotonically increasing
+    Instruction *lhs = maximum->operand(0);
+    Instruction *rhs = maximum->operand(1);
 
-    // TODO max(f(x), f(y)) --> f(min(x, y))
-    // where f is monotonically decreasing
+    // TODO unify monotone rewrites
+    if (lhs->opcode() == rhs->opcode() && IsIncreasing(lhs->opcode())) {
+      VLOG(10) << "max(f(x), f(y)) --> f(max(x, y)) where f is increasing";
+      return ReplaceInstruction(
+          maximum,
+          CreateUnary(lhs->opcode(), CreateBinary(kMaximum, lhs->operand(0),
+                                                  rhs->operand(0))));
+    }
+
+    if (lhs->opcode() == rhs->opcode() && IsDecreasing(lhs->opcode())) {
+      VLOG(10) << "max(f(x), f(y)) --> f(min(x, y)) where f is decreasing";
+      return ReplaceInstruction(
+          maximum,
+          CreateUnary(lhs->opcode(), CreateBinary(kMinimum, lhs->operand(0),
+                                                  rhs->operand(0))));
+    }
     return false;
   }
 
   bool HandleMinimum(Instruction *minimum) {
     assert(minimum->opcode() == kMinimum);
 
-    // TODO monotonic rewrites as with maximum
+    Instruction *lhs = minimum->operand(0);
+    Instruction *rhs = minimum->operand(1);
+
+    if (lhs->opcode() == rhs->opcode() && IsIncreasing(lhs->opcode())) {
+      VLOG(10) << "min(f(x), f(y)) --> f(min(x, y)) where f is increasing";
+      return ReplaceInstruction(
+          minimum,
+          CreateUnary(lhs->opcode(), CreateBinary(kMinimum, lhs->operand(0),
+                                                  rhs->operand(0))));
+    }
+
+    if (lhs->opcode() == rhs->opcode() && IsDecreasing(lhs->opcode())) {
+      VLOG(10) << "min(f(x), f(y)) --> f(max(x, y)) where f is decreasing";
+      return ReplaceInstruction(
+          minimum,
+          CreateUnary(lhs->opcode(), CreateBinary(kMaximum, lhs->operand(0),
+                                                  rhs->operand(0))));
+    }
     return false;
   }
 
@@ -232,15 +263,13 @@ public:
       return ReplaceInstruction(multiply, lhs);
     }
 
-    // TODO This can be combined with the similar identity element rewrite for
-    // add
+    // TODO unify with 0+x --> x add identity rewrite
     if (IsConstantWithValue(lhs, 1)) {
       VLOG(10) << "1*x --> x";
       return ReplaceInstruction(multiply, rhs);
     }
 
-    // TODO The following two rewrites can be unified into a single rewrite
-    // targeting homomorphisms
+    // TODO unify into a single rewrite targeting homomorphisms
     if (lhs->opcode() == kAbs && rhs->opcode() == kAbs) {
       VLOG(10) << "|x|*|y| --> |x*y|";
       return ReplaceInstruction(

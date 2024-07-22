@@ -22,33 +22,6 @@ enum Opcode {
   kTanh
 };
 
-int Arity(Opcode opcode) {
-  switch (opcode) {
-  case kConstant:
-  case kParameter:
-  case kRng:
-    return 0;
-  case kAbs:
-  case kCos:
-  case kExp:
-  case kLog:
-  case kNegate:
-  case kSin:
-  case kTan:
-  case kTanh:
-    return 1;
-  case kAdd:
-  case kAtan2:
-  case kDivide:
-  case kMaximum:
-  case kMinimum:
-  case kMultiply:
-  case kPower:
-  case kSubtract:
-    return 2;
-  }
-}
-
 std::string opcode_to_string(Opcode opcode) {
   switch (opcode) {
   case kAbs:
@@ -89,5 +62,86 @@ std::string opcode_to_string(Opcode opcode) {
     return "tan";
   case kTanh:
     return "tanh";
+  }
+}
+
+int Arity(Opcode opcode) {
+  switch (opcode) {
+  case kConstant:
+  case kParameter:
+  case kRng:
+    return 0;
+  case kAbs:
+  case kCos:
+  case kExp:
+  case kLog:
+  case kNegate:
+  case kSin:
+  case kTan:
+  case kTanh:
+    return 1;
+  case kAdd:
+  case kAtan2:
+  case kDivide:
+  case kMaximum:
+  case kMinimum:
+  case kMultiply:
+  case kPower:
+  case kSubtract:
+    return 2;
+  }
+}
+
+bool IsEven(Opcode opcode) {
+  switch (opcode) {
+  case kAbs:
+  case kCos:
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool IsOdd(Opcode opcode) {
+  switch (opcode) {
+  case kNegate:
+  case kSin:
+  case kTan:
+  case kTanh:
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool IsIncreasing(Opcode opcode) {
+  switch (opcode) {
+  case kExp:
+  case kLog:
+  case kTanh:
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool IsDecreasing(Opcode opcode) {
+  switch (opcode) {
+  case kNegate:
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool IsCommutative(Opcode opcode) {
+  switch (opcode) {
+  case kAdd:
+  case kMaximum:
+  case kMinimum:
+  case kMultiply:
+    return true;
+  default:
+    return false;
   }
 }

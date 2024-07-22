@@ -171,6 +171,31 @@ void exp_log_test() {
   assert(exp_log->opcode() == kParameter && log_exp->opcode() == kParameter);
 }
 
+void monotone_test() {
+  Instruction *x = CreateParameter();
+  Instruction *y = CreateParameter();
+
+  Instruction *exp1 = CreateUnary(kExp, x);
+  Instruction *exp2 = CreateUnary(kExp, y);
+  Instruction *neg1 = CreateUnary(kNegate, x);
+  Instruction *neg2 = CreateUnary(kNegate, y);
+
+  Instruction *max1 = CreateBinary(kMaximum, exp1, exp2);
+  Instruction *max2 = CreateBinary(kMaximum, neg1, neg2);
+  Instruction *min1 = CreateBinary(kMinimum, exp1, exp2);
+  Instruction *min2 = CreateBinary(kMinimum, neg1, neg2);
+
+  Optimizer opt;
+  opt.Run(max1);
+  assert(max1->opcode() == kExp && max1->operand(0)->opcode() == kMaximum);
+  opt.Run(max2);
+  assert(max2->opcode() == kNegate && max2->operand(0)->opcode() == kMinimum);
+  opt.Run(min1);
+  assert(min1->opcode() == kExp && min1->operand(0)->opcode() == kMinimum);
+  opt.Run(min2);
+  assert(min2->opcode() == kNegate && min2->operand(0)->opcode() == kMaximum);
+}
+
 void multiply_abs_test() {
   Instruction *x = CreateParameter();
   Instruction *y = CreateParameter();
@@ -341,6 +366,7 @@ int main() {
   add_to_multiply_test();
   divide_divide_test();
   exp_log_test();
+  monotone_test();
   multiply_abs_test();
   multiply_exp_to_exp_add_test();
   multiply_power_common_exponent_test();
