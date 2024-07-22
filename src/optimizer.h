@@ -7,8 +7,13 @@ public:
   bool Run(Instruction *instruction) {
     bool changed = false;
 
-    if (Arity(instruction->opcode()) == 2) {
+    switch (Arity(instruction->opcode())) {
+    case 1:
+      changed |= HandleUnary(instruction);
+      break;
+    case 2:
       changed |= HandleBinary(instruction);
+      break;
     }
 
     switch (instruction->opcode()) {
@@ -59,46 +64,27 @@ public:
     return changed;
   }
 
-  // TODO create HandleUnary with constant folding and inverse op cancellation
+  bool HandleUnary(Instruction *unary) {
+    Instruction *operand = unary->operand(0);
+
+    // TODO Unify with analogous rewrite in HandleBinary
+    if (AllConstantOperands(unary)) {
+      VLOG(10) << "Folding unary operation with constant operand";
+      return ReplaceInstruction(unary, CreateConstant(Evaluate(unary)));
+    }
+
+    // Inverse op cancellation
+    return false;
+  }
 
   bool HandleBinary(Instruction *binary) {
     Instruction *lhs = binary->operand(0);
     Instruction *rhs = binary->operand(1);
 
     // Fold operations whose every operand is constant
-    if (lhs->opcode() == kConstant && rhs->opcode() == kConstant) {
-      // TODO Hide this static_cast
-      double lhs_value = static_cast<ConstantInstruction *>(lhs)->value();
-      double rhs_value = static_cast<ConstantInstruction *>(rhs)->value();
-
-      double value;
-      switch (binary->opcode()) {
-      case kAdd:
-        value = lhs_value + rhs_value;
-        break;
-      case kDivide:
-        value = lhs_value / rhs_value;
-        break;
-      case kMaximum:
-        value = std::max(lhs_value, rhs_value);
-        break;
-      case kMinimum:
-        value = std::min(lhs_value, rhs_value);
-        break;
-      case kMultiply:
-        value = lhs_value * rhs_value;
-        break;
-      case kPower:
-        value = pow(lhs_value, rhs_value);
-        break;
-      case kSubtract:
-        value = lhs_value - rhs_value;
-        break;
-      default:
-        return false;
-      }
+    if (AllConstantOperands(binary)) {
       VLOG(10) << "Folding binary operation with all constant operands";
-      return ReplaceInstruction(binary, CreateConstant(value));
+      return ReplaceInstruction(binary, CreateConstant(Evaluate(binary)));
     }
 
     // Canonicalize constants to be on the lhs for commutative ops

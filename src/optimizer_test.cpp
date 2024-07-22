@@ -1,5 +1,36 @@
 #include "optimizer.h"
 
+void unary_constant_folding_test() {
+  Instruction *c = CreateConstant(5);
+
+  Instruction *abs = CreateUnary(kAbs, c);
+  Instruction *cos = CreateUnary(kCos, c);
+  Instruction *exp = CreateUnary(kExp, c);
+  Instruction *log = CreateUnary(kLog, c);
+  Instruction *neg = CreateUnary(kNegate, c);
+  Instruction *sin = CreateUnary(kSin, c);
+  Instruction *tan = CreateUnary(kTan, c);
+  Instruction *tanh = CreateUnary(kTanh, c);
+
+  Optimizer opt;
+  opt.Run(abs);
+  assert(IsConstantWithValue(abs, 5));
+  opt.Run(cos);
+  assert(IsConstantWithValue(cos, std::cos(5)));
+  opt.Run(exp);
+  assert(IsConstantWithValue(exp, std::exp(5)));
+  opt.Run(log);
+  assert(IsConstantWithValue(log, std::log(5)));
+  opt.Run(neg);
+  assert(IsConstantWithValue(neg, -5));
+  opt.Run(sin);
+  assert(IsConstantWithValue(sin, std::sin(5)));
+  opt.Run(tan);
+  assert(IsConstantWithValue(tan, std::tan(5)));
+  opt.Run(tanh);
+  assert(IsConstantWithValue(tanh, std::tanh(5)));
+}
+
 void binary_constant_folding_test() {
   Instruction *c1 = CreateConstant(2);
   Instruction *c2 = CreateConstant(3);
@@ -299,6 +330,7 @@ void subtract_logs_to_log_divide_test() {
 }
 
 int main() {
+  unary_constant_folding_test();
   binary_constant_folding_test();
   binary_canonicalization_test();
   fold_add_0_test();

@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 #include <vector>
 
 #include "logging.h"
@@ -104,6 +105,14 @@ bool IsConstantWithValue(Instruction *instruction, double value) {
          (static_cast<ConstantInstruction *>(instruction)->value() == value);
 }
 
+bool AllConstantOperands(Instruction *instruction) {
+  bool all_constant = true;
+  for (auto operand : instruction->operands()) {
+    all_constant &= (operand->opcode() == kConstant);
+  }
+  return all_constant;
+}
+
 bool ReplaceInstruction(Instruction *old_instr, Instruction *new_instr) {
   int num_bytes = sizeof(Instruction);
   if (new_instr->opcode() == kConstant) {
@@ -111,4 +120,50 @@ bool ReplaceInstruction(Instruction *old_instr, Instruction *new_instr) {
   }
   std::memcpy(old_instr, new_instr, num_bytes);
   return true;
+}
+
+double Evaluate(Instruction *instruction) {
+  std::vector<double> evaluated;
+  for (auto operand : instruction->operands()) {
+    evaluated.push_back(Evaluate(operand));
+  }
+
+  switch (instruction->opcode()) {
+  case kAbs:
+    return abs(evaluated[0]);
+  case kAdd:
+    return evaluated[0] + evaluated[1];
+  case kAtan2:
+    return atan2(evaluated[0], evaluated[0]);
+  case kConstant:
+    return static_cast<ConstantInstruction *>(instruction)->value();
+  case kCos:
+    return cos(evaluated[0]);
+  case kDivide:
+    return evaluated[0] / evaluated[1];
+  case kExp:
+    return exp(evaluated[0]);
+  case kLog:
+    return log(evaluated[0]);
+  case kMaximum:
+    return fmax(evaluated[0], evaluated[1]);
+  case kMinimum:
+    return fmin(evaluated[0], evaluated[1]);
+  case kMultiply:
+    return evaluated[0] * evaluated[1];
+  case kNegate:
+    return -evaluated[0];
+  case kPower:
+    return pow(evaluated[0], evaluated[1]);
+  case kSin:
+    return sin(evaluated[0]);
+  case kSubtract:
+    return evaluated[0] - evaluated[1];
+  case kTan:
+    return tan(evaluated[0]);
+  case kTanh:
+    return tanh(evaluated[0]);
+    // default:
+    // return nullptr;
+  }
 }
