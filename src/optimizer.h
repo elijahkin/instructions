@@ -96,7 +96,7 @@ public:
                                 CreateBinary(binary->opcode(), rhs, lhs));
     }
 
-    // TODO eliminate identities and annihilators
+    // TODO eliminate left/right identities and annihilators
 
     // TODO homomorphisms
     return false;
@@ -120,8 +120,7 @@ public:
     Instruction *lhs = add->operand(0);
     Instruction *rhs = add->operand(1);
 
-    if (lhs->opcode() == kConstant &&
-        static_cast<ConstantInstruction *>(lhs)->value() == 0) {
+    if (IsConstantWithValue(lhs, 0)) {
       VLOG(10) << "x+0 --> x";
       return ReplaceInstruction(add, rhs);
     }

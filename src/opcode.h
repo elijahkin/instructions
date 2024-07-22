@@ -15,7 +15,6 @@ enum Opcode {
   kNegate,
   kParameter,
   kPower,
-  kRelu,
   kRng,
   kSin,
   kSubtract,
@@ -34,7 +33,6 @@ int Arity(Opcode opcode) {
   case kExp:
   case kLog:
   case kNegate:
-  case kRelu:
   case kSin:
   case kTan:
   case kTanh:
@@ -81,8 +79,6 @@ std::string opcode_to_string(Opcode opcode) {
     return "parameter";
   case kPower:
     return "power";
-  case kRelu:
-    return "relu";
   case kRng:
     return "rng";
   case kSin:
