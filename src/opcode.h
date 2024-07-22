@@ -8,7 +8,6 @@ enum Opcode {
   kCos,
   kDivide,
   kExp,
-  kImag,
   kLog,
   kMaximum,
   kMinimum,
@@ -16,9 +15,7 @@ enum Opcode {
   kNegate,
   kParameter,
   kPower,
-  kReal,
   kRelu,
-  kRemainder,
   kRng,
   kSin,
   kSubtract,
@@ -33,25 +30,22 @@ int Arity(Opcode opcode) {
   case kRng:
     return 0;
   case kAbs:
-  case kAtan2:
   case kCos:
   case kExp:
-  case kImag:
   case kLog:
   case kNegate:
-  case kReal:
   case kRelu:
   case kSin:
   case kTan:
   case kTanh:
     return 1;
   case kAdd:
+  case kAtan2:
   case kDivide:
   case kMaximum:
   case kMinimum:
   case kMultiply:
   case kPower:
-  case kRemainder:
   case kSubtract:
     return 2;
   }
@@ -73,8 +67,6 @@ std::string opcode_to_string(Opcode opcode) {
     return "divide";
   case kExp:
     return "exp";
-  case kImag:
-    return "imag";
   case kLog:
     return "log";
   case kMaximum:
@@ -89,12 +81,8 @@ std::string opcode_to_string(Opcode opcode) {
     return "parameter";
   case kPower:
     return "power";
-  case kReal:
-    return "real";
   case kRelu:
     return "relu";
-  case kRemainder:
-    return "remainder";
   case kRng:
     return "rng";
   case kSin:

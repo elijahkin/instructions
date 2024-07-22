@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -O3 -fno-exceptions -flto -s -std=c++11 -Wall -Wextra
+CFLAGS = -O2 -flto -s -std=c++11 -Wall -Wextra
 
 all: optimizer_test
 
