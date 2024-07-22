@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -O2 -flto -s -std=c++11 -Wall -Wextra
+CFLAGS = -O2 -flto -s -std=c++17 -Wall -Wextra
 
 all: optimizer_test
 

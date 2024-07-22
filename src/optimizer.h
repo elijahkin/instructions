@@ -17,20 +17,11 @@ public:
     }
 
     switch (instruction->opcode()) {
-    case kAbs:
-      changed |= HandleAbs(instruction);
-      break;
     case kAdd:
       changed |= HandleAdd(instruction);
       break;
     case kDivide:
       changed |= HandleDivide(instruction);
-      break;
-    case kExp:
-      changed |= HandleExp(instruction);
-      break;
-    case kLog:
-      changed |= HandleLog(instruction);
       break;
     case kMaximum:
       changed |= HandleMaximum(instruction);
@@ -67,15 +58,26 @@ public:
   bool HandleUnary(Instruction *unary) {
     Instruction *operand = unary->operand(0);
 
-    // TODO Unify with analogous rewrite in HandleBinary
+    // TODO unify with analogous rewrite in HandleBinary
     if (AllConstantOperands(unary)) {
       VLOG(10) << "Folding unary operation with constant operand";
       return ReplaceInstruction(unary, CreateConstant(Evaluate(unary)));
     }
 
-    // TODO Inverse op cancellation
+    if (auto inv_op = Inverse(unary->opcode()); inv_op.has_value()) {
+      if (operand->opcode() == Inverse(unary->opcode()).value()) {
+        VLOG(10) << "f(g(x)) --> x where f and g are inverses";
+        return ReplaceInstruction(unary, operand->operand(0));
+      }
+    }
 
-    // TODO Even/odd movement
+    if (operand->opcode() == kNegate && IsEven(unary->opcode())) {
+      VLOG(10) << "f(-x) --> f(x) where f is even";
+      return ReplaceInstruction(
+          unary, CreateUnary(operand->opcode(), operand->operand(0)));
+    }
+
+    // TODO odd negate rewrite
     return false;
   }
 
@@ -99,18 +101,6 @@ public:
     // TODO eliminate left/right identities and annihilators
 
     // TODO homomorphisms
-    return false;
-  }
-
-  bool HandleAbs(Instruction *abs) {
-    assert(abs->opcode() == kAbs);
-
-    Instruction *operand = abs->operand(0);
-
-    if (operand->opcode() == kNegate) {
-      VLOG(10) << "|-x| --> |x|";
-      return ReplaceInstruction(abs, CreateUnary(kAbs, operand->operand(0)));
-    }
     return false;
   }
 
@@ -175,30 +165,6 @@ public:
           divide,
           CreateBinary(kDivide, CreateBinary(kMultiply, lhs, rhs->operand(1)),
                        rhs->operand(0)));
-    }
-    return false;
-  }
-
-  bool HandleExp(Instruction *exp) {
-    assert(exp->opcode() == kExp);
-
-    Instruction *operand = exp->operand(0);
-
-    if (operand->opcode() == kLog) {
-      VLOG(10) << "exp(log(x)) --> x";
-      return ReplaceInstruction(exp, operand->operand(0));
-    }
-    return false;
-  }
-
-  bool HandleLog(Instruction *log) {
-    assert(log->opcode() == kLog);
-
-    Instruction *operand = log->operand(0);
-
-    if (operand->opcode() == kExp) {
-      VLOG(10) << "log(exp(x)) --> x";
-      return ReplaceInstruction(log, operand->operand(0));
     }
     return false;
   }
@@ -308,11 +274,6 @@ public:
     assert(negate->opcode() == kNegate);
 
     Instruction *operand = negate->operand(0);
-
-    if (operand->opcode() == kNegate) {
-      VLOG(10) << "-(-x) --> x";
-      return ReplaceInstruction(negate, operand->operand(0));
-    }
 
     if (operand->opcode() == kSubtract) {
       VLOG(10) << "-(x-y) --> y-x";

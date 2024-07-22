@@ -109,15 +109,38 @@ void multiply_one_test() {
   assert(mul->opcode() == kParameter);
 }
 
-void abs_negate_test() {
+void even_negate_test() {
   Instruction *x = CreateParameter();
 
   Instruction *neg = CreateUnary(kNegate, x);
   Instruction *abs = CreateUnary(kAbs, neg);
+  Instruction *cos = CreateUnary(kCos, neg);
 
   Optimizer opt;
   opt.Run(abs);
   assert(abs->operand(0)->opcode() == kParameter);
+  opt.Run(cos);
+  assert(cos->operand(0)->opcode() == kParameter);
+}
+
+void inverses_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *exp = CreateUnary(kExp, x);
+  Instruction *log = CreateUnary(kLog, x);
+  Instruction *neg = CreateUnary(kNegate, x);
+
+  Instruction *log_exp = CreateUnary(kLog, exp);
+  Instruction *exp_log = CreateUnary(kExp, log);
+  Instruction *neg_neg = CreateUnary(kNegate, neg);
+
+  Optimizer opt;
+  opt.Run(log_exp);
+  assert(log_exp->opcode() == kParameter);
+  opt.Run(exp_log);
+  assert(exp_log->opcode() == kParameter);
+  opt.Run(neg_neg);
+  assert(neg_neg->opcode() == kParameter);
 }
 
 void factor_add_multiply_test() {
@@ -157,18 +180,6 @@ void divide_divide_test() {
   opt.Run(div_rhs);
   assert(div_lhs->operand(1)->opcode() == kMultiply &&
          div_rhs->operand(0)->opcode() == kMultiply);
-}
-
-void exp_log_test() {
-  Instruction *x = CreateParameter();
-
-  Instruction *exp_log = CreateUnary(kExp, CreateUnary(kLog, x));
-  Instruction *log_exp = CreateUnary(kLog, CreateUnary(kExp, x));
-
-  Optimizer opt;
-  opt.Run(exp_log);
-  opt.Run(log_exp);
-  assert(exp_log->opcode() == kParameter && log_exp->opcode() == kParameter);
 }
 
 void monotone_test() {
@@ -248,17 +259,6 @@ void multiply_power_common_base_test() {
   Optimizer opt;
   opt.Run(mul);
   assert(mul->opcode() == kPower && mul->operand(1)->opcode() == kAdd);
-}
-
-void double_negation_test() {
-  Instruction *x = CreateParameter();
-
-  Instruction *neg_x = CreateUnary(kNegate, x);
-  Instruction *neg_neg_x = CreateUnary(kNegate, neg_x);
-
-  Optimizer opt;
-  opt.Run(neg_neg_x);
-  assert(neg_neg_x->opcode() == kParameter);
 }
 
 void negate_subtract_folding_test() {
@@ -358,20 +358,20 @@ int main() {
   unary_constant_folding_test();
   binary_constant_folding_test();
   binary_canonicalization_test();
+  even_negate_test();
+  monotone_test();
+  inverses_test();
+
   fold_add_0_test();
   multiply_zero_test();
   multiply_one_test();
-  abs_negate_test();
   factor_add_multiply_test();
   add_to_multiply_test();
   divide_divide_test();
-  exp_log_test();
-  monotone_test();
   multiply_abs_test();
   multiply_exp_to_exp_add_test();
   multiply_power_common_exponent_test();
   multiply_power_common_base_test();
-  double_negation_test();
   negate_subtract_folding_test();
   pow_zero_test();
   pow_one_test();

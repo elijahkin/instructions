@@ -1,3 +1,4 @@
+#include <optional>
 #include <string>
 
 enum Opcode {
@@ -131,6 +132,19 @@ bool IsDecreasing(Opcode opcode) {
     return true;
   default:
     return false;
+  }
+}
+
+std::optional<Opcode> Inverse(Opcode opcode) {
+  switch (opcode) {
+  case kExp:
+    return kLog;
+  case kLog:
+    return kExp;
+  case kNegate:
+    return kNegate;
+  default:
+    return std::nullopt;
   }
 }
 
