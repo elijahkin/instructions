@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "instruction.h"
 
 class Optimizer {
@@ -5,42 +7,43 @@ public:
   bool Run(Instruction *instruction) {
     bool changed = false;
 
+    if (Arity(instruction->opcode()) == 2) {
+      changed |= HandleBinary(instruction);
+    }
+
     switch (instruction->opcode()) {
     case kAbs:
-      changed = HandleAbs(instruction);
+      changed |= HandleAbs(instruction);
       break;
     case kAdd:
-      changed = HandleAdd(instruction);
-      break;
-    case kConstant:
-      changed = HandleConstant(instruction);
+      changed |= HandleAdd(instruction);
       break;
     case kDivide:
-      changed = HandleDivide(instruction);
+      changed |= HandleDivide(instruction);
       break;
     case kExp:
-      changed = HandleExp(instruction);
+      changed |= HandleExp(instruction);
       break;
     case kLog:
-      changed = HandleLog(instruction);
+      changed |= HandleLog(instruction);
       break;
     case kMaximum:
-      changed = HandleMaximum(instruction);
+      changed |= HandleMaximum(instruction);
       break;
     case kMinimum:
-      changed = HandleMinimum(instruction);
+      changed |= HandleMinimum(instruction);
       break;
     case kMultiply:
-      changed = HandleMultiply(instruction);
+      changed |= HandleMultiply(instruction);
       break;
     case kNegate:
-      changed = HandleNegate(instruction);
+      changed |= HandleNegate(instruction);
       break;
     case kPower:
-      changed = HandlePower(instruction);
+      changed |= HandlePower(instruction);
       break;
     case kSubtract:
-      changed = HandleSubtract(instruction);
+      changed |= HandleSubtract(instruction);
       break;
     default:
       break;
@@ -54,6 +57,63 @@ public:
       Run(instruction);
     }
     return changed;
+  }
+
+  // TODO create HandleUnary with constant folding and inverse op cancellation
+
+  bool HandleBinary(Instruction *binary) {
+    Instruction *lhs = binary->operand(0);
+    Instruction *rhs = binary->operand(1);
+
+    // Fold operations whose every operand is constant
+    if (lhs->opcode() == kConstant && rhs->opcode() == kConstant) {
+      // TODO Hide this static_cast
+      double lhs_value = static_cast<ConstantInstruction *>(lhs)->value();
+      double rhs_value = static_cast<ConstantInstruction *>(rhs)->value();
+
+      double value;
+      switch (binary->opcode()) {
+      case kAdd:
+        value = lhs_value + rhs_value;
+        break;
+      case kDivide:
+        value = lhs_value / rhs_value;
+        break;
+      case kMaximum:
+        value = std::max(lhs_value, rhs_value);
+        break;
+      case kMinimum:
+        value = std::min(lhs_value, rhs_value);
+        break;
+      case kMultiply:
+        value = lhs_value * rhs_value;
+        break;
+      case kPower:
+        value = pow(lhs_value, rhs_value);
+        break;
+      case kSubtract:
+        value = lhs_value - rhs_value;
+        break;
+      default:
+        return false;
+      }
+      VLOG(10) << "Folding binary operation with all constant operands";
+      return ReplaceInstruction(binary, CreateConstant(value));
+    }
+
+    // Canonicalize constants to be on the lhs for commutative ops
+    bool commutative =
+        (binary->opcode() == kAdd) | (binary->opcode() == kMultiply);
+    if (commutative && rhs->opcode() == kConstant) {
+      VLOG(10) << "Canonicalizing constant to lhs of commutative binary op";
+      return ReplaceInstruction(binary,
+                                CreateBinary(binary->opcode(), rhs, lhs));
+    }
+
+    // TODO eliminate identities and annihilators
+
+    // TODO homomorphisms
+    return false;
   }
 
   bool HandleAbs(Instruction *abs) {
@@ -74,24 +134,10 @@ public:
     Instruction *lhs = add->operand(0);
     Instruction *rhs = add->operand(1);
 
-    if (lhs->opcode() == kConstant && rhs->opcode() == kConstant) {
-      VLOG(10) << "c+c --> c";
-      return ReplaceInstruction(
-          add,
-          CreateConstant(static_cast<ConstantInstruction *>(lhs)->value() +
-                         static_cast<ConstantInstruction *>(rhs)->value()));
-    }
-
-    // Canonicalize add with one constant operand to make the constant the rhs
-    if (lhs->opcode() == kConstant) {
-      VLOG(10) << "c+x --> x+c";
-      return ReplaceInstruction(add, CreateBinary(kAdd, rhs, lhs));
-    }
-
-    if (rhs->opcode() == kConstant &&
-        static_cast<ConstantInstruction *>(rhs)->value() == 0) {
+    if (lhs->opcode() == kConstant &&
+        static_cast<ConstantInstruction *>(lhs)->value() == 0) {
       VLOG(10) << "x+0 --> x";
-      return ReplaceInstruction(add, lhs);
+      return ReplaceInstruction(add, rhs);
     }
 
     if (lhs->opcode() == kMultiply && rhs->opcode() == kMultiply) {
@@ -120,20 +166,16 @@ public:
     return false;
   }
 
-  bool HandleConstant(Instruction *constant) {
-    assert(constant->opcode() == kConstant);
-
-    // TODO if all operands are constants, fold
-    return false;
-  }
-
   bool HandleDivide(Instruction *divide) {
     assert(divide->opcode() == kDivide);
 
     Instruction *lhs = divide->operand(0);
     Instruction *rhs = divide->operand(1);
 
-    // TODO x / constant --> x * constant
+    // if (rhs->opcode() == kConstant) {
+    //   VLOG(10) << "x/c --> x*c";
+    //   return TODO;
+    // }
 
     if (lhs->opcode() == kDivide) {
       VLOG(10) << "(x/y)/z --> x/(y*z)";
@@ -200,19 +242,8 @@ public:
     Instruction *lhs = multiply->operand(0);
     Instruction *rhs = multiply->operand(1);
 
-    // TODO guy
-
-    // Canonicalize multiply with one constant operand to make the constant the
-    // rhs
-    // TODO This can be unified with the similar rewrite for add for commutative
-    // binary ops
-    if (rhs->opcode() == kConstant) {
-      VLOG(10) << "x*c --> c*x";
-      return ReplaceInstruction(multiply, CreateBinary(kMultiply, rhs, lhs));
-    }
-
     if (IsConstantWithValue(lhs, 0)) {
-      VLOG(10) << "0*x --> x";
+      VLOG(10) << "0*x --> 0";
       return ReplaceInstruction(multiply, lhs);
     }
 

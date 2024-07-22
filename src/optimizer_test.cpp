@@ -1,5 +1,83 @@
 #include "optimizer.h"
 
+void binary_constant_folding_test() {
+  Instruction *c1 = CreateConstant(2);
+  Instruction *c2 = CreateConstant(3);
+
+  Instruction *add = CreateBinary(kAdd, c1, c2);
+  Instruction *div = CreateBinary(kDivide, c1, c2);
+  Instruction *max = CreateBinary(kMaximum, c1, c2);
+  Instruction *min = CreateBinary(kMinimum, c1, c2);
+  Instruction *mul = CreateBinary(kMultiply, c1, c2);
+  Instruction *pow = CreateBinary(kPower, c1, c2);
+  Instruction *sub = CreateBinary(kSubtract, c1, c2);
+
+  Optimizer opt;
+  opt.Run(add);
+  assert(IsConstantWithValue(add, 5));
+  opt.Run(div);
+  assert(IsConstantWithValue(div, 2 / 3.0));
+  opt.Run(max);
+  assert(IsConstantWithValue(max, 3));
+  opt.Run(min);
+  assert(IsConstantWithValue(min, 2));
+  opt.Run(mul);
+  assert(IsConstantWithValue(mul, 6));
+  opt.Run(pow);
+  assert(IsConstantWithValue(pow, 8));
+  opt.Run(sub);
+  assert(IsConstantWithValue(sub, -1));
+}
+
+void binary_canonicalization_test() {
+  Instruction *x = CreateParameter();
+  Instruction *c = CreateConstant(3);
+
+  Instruction *add = CreateBinary(kAdd, x, c);
+  Instruction *mul = CreateBinary(kMultiply, x, c);
+
+  Optimizer opt;
+  opt.Run(add);
+  assert(add->operand(0)->opcode() == kConstant &&
+         add->operand(1)->opcode() == kParameter);
+  opt.Run(mul);
+  assert(mul->operand(0)->opcode() == kConstant &&
+         mul->operand(1)->opcode() == kParameter);
+}
+
+void fold_add_0_test() {
+  Instruction *x = CreateParameter();
+  Instruction *c = CreateConstant(0);
+
+  Instruction *add = CreateBinary(kAdd, c, x);
+
+  Optimizer opt;
+  opt.Run(add);
+  assert(add->opcode() == kParameter);
+}
+
+void multiply_zero_test() {
+  Instruction *c = CreateConstant(0);
+  Instruction *x = CreateParameter();
+
+  Instruction *mul = CreateBinary(kMultiply, c, x);
+
+  Optimizer opt;
+  opt.Run(mul);
+  assert(IsConstantWithValue(mul, 0));
+}
+
+void multiply_one_test() {
+  Instruction *c = CreateConstant(1);
+  Instruction *x = CreateParameter();
+
+  Instruction *mul = CreateBinary(kMultiply, c, x);
+
+  Optimizer opt;
+  opt.Run(mul);
+  assert(mul->opcode() == kParameter);
+}
+
 void abs_negate_test() {
   Instruction *x = CreateParameter();
 
@@ -9,50 +87,6 @@ void abs_negate_test() {
   Optimizer opt;
   opt.Run(abs);
   assert(abs->operand(0)->opcode() == kParameter);
-}
-
-void add_constants_test() {
-  Instruction *c1 = CreateConstant(2);
-  Instruction *c2 = CreateConstant(3);
-
-  Instruction *add = CreateBinary(kAdd, c1, c2);
-
-  Optimizer opt;
-  opt.Run(add);
-  assert(IsConstantWithValue(add, 5));
-}
-
-void add_constant_lhs_test() {
-  Instruction *c = CreateConstant(1);
-  Instruction *x = CreateParameter();
-
-  Instruction *add = CreateBinary(kAdd, c, x);
-
-  Optimizer opt;
-  opt.Run(add);
-  assert(add->operand(0)->opcode() == kParameter &&
-         add->operand(1)->opcode() == kConstant);
-}
-
-void fold_add_0_test() {
-  Instruction *x = CreateParameter();
-  Instruction *c = CreateConstant(0);
-
-  Instruction *add = CreateBinary(kAdd, x, c);
-
-  Optimizer opt;
-  opt.Run(add);
-  assert(add->opcode() == kParameter);
-}
-
-void dont_fold_add_1_test() {
-  Instruction *x = CreateParameter();
-  Instruction *c = CreateConstant(1);
-
-  Instruction *add = CreateBinary(kAdd, x, c);
-
-  Optimizer opt;
-  assert(!opt.Run(add));
 }
 
 void factor_add_multiply_test() {
@@ -104,40 +138,6 @@ void exp_log_test() {
   opt.Run(exp_log);
   opt.Run(log_exp);
   assert(exp_log->opcode() == kParameter && log_exp->opcode() == kParameter);
-}
-
-void multiply_constant_canonicalization_test() {
-  Instruction *x = CreateParameter();
-  Instruction *c = CreateConstant(3);
-
-  Instruction *mul = CreateBinary(kMultiply, x, c);
-
-  Optimizer opt;
-  opt.Run(mul);
-  assert(mul->operand(0)->opcode() == kConstant &&
-         mul->operand(1)->opcode() == kParameter);
-}
-
-void multiply_zero_test() {
-  Instruction *c = CreateConstant(0);
-  Instruction *x = CreateParameter();
-
-  Instruction *mul = CreateBinary(kMultiply, c, x);
-
-  Optimizer opt;
-  opt.Run(mul);
-  assert(IsConstantWithValue(mul, 0));
-}
-
-void multiply_one_test() {
-  Instruction *c = CreateConstant(1);
-  Instruction *x = CreateParameter();
-
-  Instruction *mul = CreateBinary(kMultiply, c, x);
-
-  Optimizer opt;
-  opt.Run(mul);
-  assert(mul->opcode() == kParameter);
 }
 
 void multiply_abs_test() {
@@ -299,18 +299,16 @@ void subtract_logs_to_log_divide_test() {
 }
 
 int main() {
-  abs_negate_test();
-  add_constants_test();
-  add_constant_lhs_test();
+  binary_constant_folding_test();
+  binary_canonicalization_test();
   fold_add_0_test();
-  dont_fold_add_1_test();
+  multiply_zero_test();
+  multiply_one_test();
+  abs_negate_test();
   factor_add_multiply_test();
   add_to_multiply_test();
   divide_divide_test();
   exp_log_test();
-  multiply_constant_canonicalization_test();
-  multiply_zero_test();
-  multiply_one_test();
   multiply_abs_test();
   multiply_exp_to_exp_add_test();
   multiply_power_common_exponent_test();
