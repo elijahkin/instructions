@@ -45,6 +45,7 @@ public:
       break;
     }
 
+    // TODO probably should recurse BEFORE optimizing this instruction
     for (auto operand : instruction->operands()) {
       changed = Run(operand);
     }
@@ -98,9 +99,15 @@ public:
                                 CreateBinary(binary->opcode(), rhs, lhs));
     }
 
-    // TODO eliminate left/right identities and annihilators
+    // TODO Fold expressions equal to 0 (0*x, pow(0,x), x-x)
 
-    // TODO homomorphisms
+    // TODO Fold expressions equal to 1
+
+    // TODO Fold identity elements
+
+    // TODO Strength reduction
+
+    // TODO Homomorphisms
     return false;
   }
 
@@ -114,6 +121,10 @@ public:
       VLOG(10) << "x+0 --> x";
       return ReplaceInstruction(add, rhs);
     }
+
+    // TODO x+(-y) --> x-y
+
+    // TODO (-x)+y --> y-x
 
     if (lhs->opcode() == kMultiply && rhs->opcode() == kMultiply) {
       if (lhs->operand(0) == rhs->operand(0)) {
@@ -138,6 +149,8 @@ public:
       return ReplaceInstruction(
           add, CreateBinary(kMultiply, lhs, CreateConstant(2)));
     }
+
+    // TODO pow(sin(x),2)+pow(cos(x),2) --> 1
     return false;
   }
 
@@ -151,6 +164,10 @@ public:
     //   VLOG(10) << "x/c --> x*c";
     //   return TODO;
     // }
+
+    // TODO x/x --> 1
+
+    // TODO sin(x)/cos(x) --> tan(x)
 
     if (lhs->opcode() == kDivide) {
       VLOG(10) << "(x/y)/z --> x/(y*z)";
@@ -175,7 +192,7 @@ public:
     Instruction *lhs = maximum->operand(0);
     Instruction *rhs = maximum->operand(1);
 
-    // TODO unify monotone rewrites
+    // TODO unify monotone rewrites (with sublinear condition?)
     if (lhs->opcode() == rhs->opcode() && IsIncreasing(lhs->opcode())) {
       VLOG(10) << "max(f(x), f(y)) --> f(max(x, y)) where f is increasing";
       return ReplaceInstruction(
@@ -330,12 +347,16 @@ public:
     Instruction *lhs = subtract->operand(0);
     Instruction *rhs = subtract->operand(1);
 
+    // TODO x-x --> 0
+
     if (lhs->opcode() == kLog && rhs->opcode() == kLog) {
       VLOG(10) << "log(x)-log(y) --> log(x/y)";
       return ReplaceInstruction(
           subtract, CreateUnary(kLog, CreateBinary(kDivide, lhs->operand(0),
                                                    rhs->operand(0))));
     }
+
+    // TODO pow(x,2)-pow(y,2) --> (x-y)*(x+y)
     return false;
   }
 };
