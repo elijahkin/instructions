@@ -7,6 +7,28 @@ public:
   bool Run(Instruction *instruction) {
     bool changed = false;
 
+    // Rewrites involving binary ops with both operands the same; this should
+    // happen BEFORE recursing since there is no point in traversing the whole
+    // tree if the root operation is x-x
+    if (Arity(instruction->opcode()) == 2 &&
+        instruction->operand(0) == instruction->operand(1)) {
+      switch (instruction->opcode()) {
+      case kAdd:
+        VLOG(10) << "x+x --> 2*x";
+        return ReplaceInstruction(
+            instruction, CreateBinary(kMultiply, instruction->operand(0),
+                                      CreateConstant(2)));
+      case kDivide:
+        VLOG(10) << "x/x --> 1";
+        return ReplaceInstruction(instruction, CreateConstant(1));
+      case kSubtract:
+        VLOG(10) << "x-x --> 0";
+        return ReplaceInstruction(instruction, CreateConstant(0));
+      default:
+        break;
+      }
+    }
+
     // Recurse on the instruction's operands before optimizing this one
     for (auto operand : instruction->operands()) {
       changed = Run(operand);
@@ -104,15 +126,15 @@ public:
                                 CreateBinary(binary->opcode(), rhs, lhs));
     }
 
-    // TODO Fold expressions equal to 0 (0*x, pow(0,x), x-x)
+    // TODO Fold expressions equal to 0: 0*x, pow(0,x), x-x
 
-    // TODO Fold expressions equal to 1
+    // TODO Fold expressions equal to 1: x/x, pow(1,x), pow(x,0), pythag
 
-    // TODO Fold identity elements
+    // TODO Fold identity elements: x+0, 1*x, pow(x,1)
+
+    // TODO Homomorphisms: abs, exp, log, sublinear (and maybe negate?)
 
     // TODO Strength reduction
-
-    // TODO Homomorphisms
     return false;
   }
 
@@ -140,6 +162,7 @@ public:
                                 CreateBinary(kSubtract, rhs, lhs->operand(0)));
     }
 
+    // TODO unify these and make them more general, i.e. xy+zx --> x(y+z)
     if (lhs->opcode() == kMultiply && rhs->opcode() == kMultiply) {
       if (lhs->operand(0) == rhs->operand(0)) {
         VLOG(10) << "xy+xz --> x(y+z)";
@@ -158,11 +181,7 @@ public:
       }
     }
 
-    if (lhs == rhs) {
-      VLOG(10) << "x+x --> 2*x";
-      return ReplaceInstruction(
-          add, CreateBinary(kMultiply, lhs, CreateConstant(2)));
-    }
+    // TODO log(x)+log(y) --> log(x*y)
 
     // TODO pow(sin(x),2)+pow(cos(x),2) --> 1
     return false;
@@ -179,11 +198,6 @@ public:
       return ReplaceInstruction(
           divide,
           CreateBinary(kMultiply, lhs, CreateConstant(1 / Evaluate(rhs))));
-    }
-
-    if (lhs == rhs) {
-      VLOG(10) << "x/x --> 1";
-      return ReplaceInstruction(divide, CreateConstant(1));
     }
 
     if (lhs->opcode() == kSin && rhs->opcode() == kCos &&
@@ -224,7 +238,8 @@ public:
     Instruction *lhs = maximum->operand(0);
     Instruction *rhs = maximum->operand(1);
 
-    // TODO unify monotone rewrites (with sublinear condition?)
+    // TODO unify monotone rewrites (with sublinear condition? instance of
+    // homomorphism?)
     if (lhs->opcode() == rhs->opcode() && IsIncreasing(lhs->opcode())) {
       VLOG(10) << "max(f(x), f(y)) --> f(max(x, y)) where f is increasing";
       return ReplaceInstruction(
@@ -373,11 +388,6 @@ public:
 
     Instruction *lhs = subtract->operand(0);
     Instruction *rhs = subtract->operand(1);
-
-    if (lhs == rhs) {
-      VLOG(10) << "x-x --> 0";
-      return ReplaceInstruction(subtract, CreateConstant(0));
-    }
 
     if (lhs->opcode() == kLog && rhs->opcode() == kLog) {
       VLOG(10) << "log(x)-log(y) --> log(x/y)";
