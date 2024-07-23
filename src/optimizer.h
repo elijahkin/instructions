@@ -7,6 +7,11 @@ public:
   bool Run(Instruction *instruction) {
     bool changed = false;
 
+    // Recurse on the instruction's operands before optimizing this one
+    for (auto operand : instruction->operands()) {
+      changed = Run(operand);
+    }
+
     switch (Arity(instruction->opcode())) {
     case 1:
       changed |= HandleUnary(instruction);
@@ -45,11 +50,6 @@ public:
       break;
     }
 
-    // TODO probably should recurse BEFORE optimizing this instruction
-    for (auto operand : instruction->operands()) {
-      changed = Run(operand);
-    }
-
     if (changed) {
       Run(instruction);
     }
@@ -75,10 +75,15 @@ public:
     if (operand->opcode() == kNegate && IsEven(unary->opcode())) {
       VLOG(10) << "f(-x) --> f(x) where f is even";
       return ReplaceInstruction(
-          unary, CreateUnary(operand->opcode(), operand->operand(0)));
+          unary, CreateUnary(unary->opcode(), operand->operand(0)));
     }
 
-    // TODO odd negate rewrite
+    if (operand->opcode() == kNegate && IsOdd(unary->opcode())) {
+      VLOG(10) << "f(-x) --> -f(x) where f is odd";
+      return ReplaceInstruction(
+          unary, CreateUnary(kNegate, CreateUnary(unary->opcode(),
+                                                  operand->operand(0))));
+    }
     return false;
   }
 
@@ -122,9 +127,18 @@ public:
       return ReplaceInstruction(add, rhs);
     }
 
-    // TODO x+(-y) --> x-y
+    // TODO Maybe canonicalize so we don't need both of these?
+    if (rhs->opcode() == kNegate) {
+      VLOG(10) << "x+(-y) --> x-y";
+      return ReplaceInstruction(add,
+                                CreateBinary(kSubtract, lhs, rhs->operand(0)));
+    }
 
-    // TODO (-x)+y --> y-x
+    if (lhs->opcode() == kNegate) {
+      VLOG(10) << "(-x)+y --> y-x";
+      return ReplaceInstruction(add,
+                                CreateBinary(kSubtract, rhs, lhs->operand(0)));
+    }
 
     if (lhs->opcode() == kMultiply && rhs->opcode() == kMultiply) {
       if (lhs->operand(0) == rhs->operand(0)) {
@@ -160,14 +174,32 @@ public:
     Instruction *lhs = divide->operand(0);
     Instruction *rhs = divide->operand(1);
 
-    // if (rhs->opcode() == kConstant) {
-    //   VLOG(10) << "x/c --> x*c";
-    //   return TODO;
-    // }
+    if (rhs->opcode() == kConstant) {
+      VLOG(10) << "x/c --> x*c";
+      return ReplaceInstruction(
+          divide,
+          CreateBinary(kMultiply, lhs, CreateConstant(1 / Evaluate(rhs))));
+    }
 
-    // TODO x/x --> 1
+    if (lhs == rhs) {
+      VLOG(10) << "x/x --> 1";
+      return ReplaceInstruction(divide, CreateConstant(1));
+    }
 
-    // TODO sin(x)/cos(x) --> tan(x)
+    if (lhs->opcode() == kSin && rhs->opcode() == kCos &&
+        lhs->operand(0) == rhs->operand(0)) {
+      VLOG(10) << "sin(x)/cos(x) --> tan(x)";
+      return ReplaceInstruction(divide, CreateUnary(kTan, lhs->operand(0)));
+    }
+
+    if (rhs->opcode() == kPower) {
+      VLOG(10) << "x/pow(y,z) --> x*pow(y,-z)";
+      return ReplaceInstruction(
+          divide,
+          CreateBinary(kMultiply, lhs,
+                       CreateBinary(kPower, rhs->operand(0),
+                                    CreateUnary(kNegate, rhs->operand(1)))));
+    }
 
     if (lhs->opcode() == kDivide) {
       VLOG(10) << "(x/y)/z --> x/(y*z)";
@@ -347,7 +379,10 @@ public:
     Instruction *lhs = subtract->operand(0);
     Instruction *rhs = subtract->operand(1);
 
-    // TODO x-x --> 0
+    if (lhs == rhs) {
+      VLOG(10) << "x-x --> 0";
+      return ReplaceInstruction(subtract, CreateConstant(0));
+    }
 
     if (lhs->opcode() == kLog && rhs->opcode() == kLog) {
       VLOG(10) << "log(x)-log(y) --> log(x/y)";

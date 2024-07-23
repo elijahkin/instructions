@@ -118,9 +118,26 @@ void even_negate_test() {
 
   Optimizer opt;
   opt.Run(abs);
-  assert(abs->operand(0)->opcode() == kParameter);
+  assert(abs->opcode() == kAbs && abs->operand(0)->opcode() == kParameter);
   opt.Run(cos);
-  assert(cos->operand(0)->opcode() == kParameter);
+  assert(cos->opcode() == kCos && cos->operand(0)->opcode() == kParameter);
+}
+
+void odd_negate_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *neg = CreateUnary(kNegate, x);
+  Instruction *sin = CreateUnary(kSin, neg);
+  Instruction *tan = CreateUnary(kTan, neg);
+  Instruction *tanh = CreateUnary(kTanh, neg);
+
+  Optimizer opt;
+  opt.Run(sin);
+  assert(sin->opcode() == kNegate && sin->operand(0)->opcode() == kSin);
+  opt.Run(tan);
+  assert(tan->opcode() == kNegate && tan->operand(0)->opcode() == kTan);
+  opt.Run(tanh);
+  assert(tanh->opcode() == kNegate && tanh->operand(0)->opcode() == kTanh);
 }
 
 void inverses_test() {
@@ -141,6 +158,82 @@ void inverses_test() {
   assert(exp_log->opcode() == kParameter);
   opt.Run(neg_neg);
   assert(neg_neg->opcode() == kParameter);
+}
+
+void multiply_exp_with_exp_neg_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *exp_x = CreateUnary(kExp, x);
+  Instruction *neg = CreateUnary(kNegate, x);
+  Instruction *exp_neg = CreateUnary(kExp, neg);
+  Instruction *mul = CreateBinary(kMultiply, exp_x, exp_neg);
+
+  Optimizer opt;
+  opt.Run(mul);
+  assert(IsConstantWithValue(mul, 1));
+}
+
+void multiply_powers_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *two = CreateConstant(2);
+  Instruction *pow1 = CreateBinary(kPower, x, two);
+  Instruction *four = CreateConstant(4);
+  Instruction *pow2 = CreateBinary(kPower, x, four);
+  Instruction *mul = CreateBinary(kMultiply, pow1, pow2);
+
+  Optimizer opt;
+  opt.Run(mul);
+  assert(mul->opcode() == kPower && IsConstantWithValue(mul->operand(1), 6));
+}
+
+void multiply_power_with_parameter_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *two = CreateConstant(2);
+  Instruction *pow = CreateBinary(kPower, x, two);
+  Instruction *mul = CreateBinary(kMultiply, x, pow);
+
+  Optimizer opt;
+  opt.Run(mul);
+  assert(mul->opcode() == kPower && IsConstantWithValue(mul->operand(1), 3));
+}
+
+void divide_power_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *three = CreateConstant(3);
+  Instruction *pow = CreateBinary(kPower, x, three);
+  Instruction *one = CreateConstant(1);
+  Instruction *div = CreateBinary(kDivide, one, pow);
+
+  Optimizer opt;
+  opt.Run(div);
+  assert(div->opcode() == kPower && IsConstantWithValue(div->operand(1), -3));
+}
+
+void divide_constant_to_multiply_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *two = CreateConstant(2);
+  Instruction *div = CreateBinary(kDivide, x, two);
+
+  Optimizer opt;
+  opt.Run(div);
+  assert(div->opcode() == kMultiply &&
+         IsConstantWithValue(div->operand(0), 0.5));
+}
+
+void divide_sin_cos_to_tan_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *sin = CreateUnary(kSin, x);
+  Instruction *cos = CreateUnary(kCos, x);
+  Instruction *div = CreateBinary(kDivide, sin, cos);
+
+  Optimizer opt;
+  opt.Run(div);
+  assert(div->opcode() == kTan);
 }
 
 void factor_add_multiply_test() {
@@ -359,8 +452,16 @@ int main() {
   binary_constant_folding_test();
   binary_canonicalization_test();
   even_negate_test();
+  odd_negate_test();
   monotone_test();
   inverses_test();
+
+  multiply_exp_with_exp_neg_test();
+  // multiply_powers_test();
+  // multiply_power_with_parameter_test();
+  divide_power_test();
+  divide_constant_to_multiply_test();
+  divide_sin_cos_to_tan_test();
 
   fold_add_0_test();
   multiply_zero_test();
