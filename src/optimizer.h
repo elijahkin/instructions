@@ -349,11 +349,6 @@ public:
       return ReplaceInstruction(power, lhs);
     }
 
-    if (IsConstantWithValue(rhs, 2)) {
-      VLOG(10) << "pow(x,2) --> x*x";
-      return ReplaceInstruction(power, CreateBinary(kMultiply, lhs, lhs));
-    }
-
     if (IsConstantWithValue(lhs, 0)) {
       VLOG(10) << "pow(0,x) --> 0";
       return ReplaceInstruction(power, lhs);

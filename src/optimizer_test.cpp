@@ -388,17 +388,6 @@ void pow_one_test() {
   assert(pow->opcode() == kParameter);
 }
 
-void square_test() {
-  Instruction *x = CreateParameter();
-  Instruction *c = CreateConstant(2);
-
-  Instruction *pow = CreateBinary(kPower, x, c);
-
-  Optimizer opt;
-  opt.Run(pow);
-  assert(pow->opcode() == kMultiply);
-}
-
 void zero_pow_test() {
   Instruction *c = CreateConstant(0);
   Instruction *x = CreateParameter();
@@ -457,7 +446,7 @@ int main() {
   inverses_test();
 
   multiply_exp_with_exp_neg_test();
-  // multiply_powers_test();
+  multiply_powers_test();
   // multiply_power_with_parameter_test();
   divide_power_test();
   divide_constant_to_multiply_test();
@@ -476,7 +465,6 @@ int main() {
   negate_subtract_folding_test();
   pow_zero_test();
   pow_one_test();
-  square_test();
   zero_pow_test();
   one_pow_test();
   power_power_test();
