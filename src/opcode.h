@@ -159,3 +159,13 @@ bool IsCommutative(Opcode opcode) {
     return false;
   }
 }
+
+bool IsNonNegative(Opcode opcode) {
+  switch (opcode) {
+  case kExp:
+    return true;
+  // TODO case kConstant:
+  default:
+    return false;
+  }
+}

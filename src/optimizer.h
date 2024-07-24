@@ -98,17 +98,25 @@ public:
       }
     }
 
+    // TODO More general: f(g(x)) --> f(x)
     if (operand->opcode() == kNegate && IsEven(unary->opcode())) {
       VLOG(10) << "f(-x) --> f(x) where f is even";
       return ReplaceInstruction(
           unary, CreateUnary(unary->opcode(), operand->operand(0)));
     }
 
+    // TODO More general: f(g(x)) --> g(f(x))
     if (operand->opcode() == kNegate && IsOdd(unary->opcode())) {
       VLOG(10) << "f(-x) --> -f(x) where f is odd";
       return ReplaceInstruction(
           unary, CreateUnary(kNegate, CreateUnary(unary->opcode(),
                                                   operand->operand(0))));
+    }
+
+    // TODO More general: f(g(x)) --> g(x)
+    if (unary->opcode() == kAbs && IsNonNegative(operand->opcode())) {
+      VLOG(10) << "|f(x)| --> f(x) where f is non-negative";
+      return ReplaceInstruction(unary, operand);
     }
     return false;
   }
@@ -395,9 +403,6 @@ public:
 
   bool HandleSubtract(Instruction *subtract) {
     assert(subtract->opcode() == kSubtract);
-
-    Instruction *lhs = subtract->operand(0);
-    Instruction *rhs = subtract->operand(1);
 
     // TODO pow(x,2)-pow(y,2) --> (x-y)*(x+y)
     return false;

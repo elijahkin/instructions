@@ -236,6 +236,17 @@ void divide_sin_cos_to_tan_test() {
   assert(div->opcode() == kTan);
 }
 
+void abs_exp_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *exp = CreateUnary(kExp, x);
+  Instruction *abs = CreateUnary(kAbs, exp);
+
+  Optimizer opt;
+  opt.Run(abs);
+  assert(abs->opcode() == kExp);
+}
+
 void factor_add_multiply_test() {
   Instruction *x = CreateParameter();
   Instruction *y = CreateParameter();
@@ -451,6 +462,7 @@ int main() {
   divide_power_test();
   divide_constant_to_multiply_test();
   divide_sin_cos_to_tan_test();
+  abs_exp_test();
 
   fold_add_0_test();
   multiply_zero_test();
