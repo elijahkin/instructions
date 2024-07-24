@@ -40,21 +40,59 @@ public:
         Run(operand);
       }
 
-      switch (Arity(instruction->opcode())) {
-      case 1:
-        changed |= HandleUnary(instruction);
-        break;
-      case 2:
-        changed |= HandleBinary(instruction);
-        break;
+      // Try for arity-specific rewrites
+      auto HandleArity = GetHandleArity(Arity(instruction->opcode()));
+      if (HandleArity) {
+        changed |= HandleArity(instruction);
       }
 
-      // Try for any opcode-specific rewrites
-      changed |= HandleOpcode(instruction);
+      // Try for opcode-specific rewrites
+      auto HandleOpcode = GetHandleOpcode(instruction->opcode());
+      if (HandleOpcode) {
+        changed |= HandleOpcode(instruction);
+      }
+      // Loop until we reach a fixed point
     } while (changed);
   }
 
-  bool HandleUnary(Instruction *unary) {
+private:
+  std::function<bool(Instruction *)> GetHandleArity(int arity) {
+    switch (arity) {
+    case 1:
+      return HandleUnary;
+    case 2:
+      return HandleBinary;
+    default:
+      return nullptr;
+    }
+  }
+
+  std::function<bool(Instruction *)> GetHandleOpcode(Opcode opcode) {
+    switch (opcode) {
+    case kAdd:
+      return HandleAdd;
+    case kDivide:
+      return HandleDivide;
+    case kMaximum:
+      return HandleMaximum;
+    case kMinimum:
+      return HandleMinimum;
+    case kMultiply:
+      return HandleMultiply;
+    case kNegate:
+      return HandleNegate;
+    case kPower:
+      return HandlePower;
+    case kSubtract:
+      return HandleSubtract;
+    default:
+      return nullptr;
+    }
+  }
+
+  static bool HandleUnary(Instruction *unary) {
+    assert(Arity(unary->opcode()) == 1);
+
     Instruction *operand = unary->operand(0);
 
     // TODO Unify with analogous rewrite in HandleBinary
@@ -93,7 +131,9 @@ public:
     return false;
   }
 
-  bool HandleBinary(Instruction *binary) {
+  static bool HandleBinary(Instruction *binary) {
+    assert(Arity(binary->opcode()) == 2);
+
     Instruction *lhs = binary->operand(0);
     Instruction *rhs = binary->operand(1);
 
@@ -145,30 +185,7 @@ public:
     return false;
   }
 
-  bool HandleOpcode(Instruction *instruction) {
-    switch (instruction->opcode()) {
-    case kAdd:
-      return HandleAdd(instruction);
-    case kDivide:
-      return HandleDivide(instruction);
-    case kMaximum:
-      return HandleMaximum(instruction);
-    case kMinimum:
-      return HandleMinimum(instruction);
-    case kMultiply:
-      return HandleMultiply(instruction);
-    case kNegate:
-      return HandleNegate(instruction);
-    case kPower:
-      return HandlePower(instruction);
-    case kSubtract:
-      return HandleSubtract(instruction);
-    default:
-      return false;
-    }
-  }
-
-  bool HandleAdd(Instruction *add) {
+  static bool HandleAdd(Instruction *add) {
     assert(add->opcode() == kAdd);
 
     Instruction *lhs = add->operand(0);
@@ -215,7 +232,7 @@ public:
     return false;
   }
 
-  bool HandleDivide(Instruction *divide) {
+  static bool HandleDivide(Instruction *divide) {
     assert(divide->opcode() == kDivide);
 
     Instruction *lhs = divide->operand(0);
@@ -260,7 +277,7 @@ public:
     return false;
   }
 
-  bool HandleMaximum(Instruction *maximum) {
+  static bool HandleMaximum(Instruction *maximum) {
     assert(maximum->opcode() == kMaximum);
 
     Instruction *lhs = maximum->operand(0);
@@ -286,7 +303,7 @@ public:
     return false;
   }
 
-  bool HandleMinimum(Instruction *minimum) {
+  static bool HandleMinimum(Instruction *minimum) {
     assert(minimum->opcode() == kMinimum);
 
     Instruction *lhs = minimum->operand(0);
@@ -310,7 +327,7 @@ public:
     return false;
   }
 
-  bool HandleMultiply(Instruction *multiply) {
+  static bool HandleMultiply(Instruction *multiply) {
     assert(multiply->opcode() == kMultiply);
 
     Instruction *lhs = multiply->operand(0);
@@ -347,7 +364,7 @@ public:
     return false;
   }
 
-  bool HandleNegate(Instruction *negate) {
+  static bool HandleNegate(Instruction *negate) {
     assert(negate->opcode() == kNegate);
 
     Instruction *operand = negate->operand(0);
@@ -361,7 +378,7 @@ public:
     return false;
   }
 
-  bool HandlePower(Instruction *power) {
+  static bool HandlePower(Instruction *power) {
     assert(power->opcode() == kPower);
 
     Instruction *lhs = power->operand(0);
@@ -396,7 +413,7 @@ public:
     return false;
   }
 
-  bool HandleSubtract(Instruction *subtract) {
+  static bool HandleSubtract(Instruction *subtract) {
     assert(subtract->opcode() == kSubtract);
 
     // TODO pow(x,2)-pow(y,2) --> (x-y)*(x+y)
