@@ -4,82 +4,54 @@
 
 class Optimizer {
 public:
-  bool Run(Instruction *instruction) {
-    bool changed = false;
+  void Run(Instruction *instruction) {
+    bool changed;
+    do {
+      changed = false;
 
-    // Rewrites involving binary ops with both operands the same; this should
-    // happen BEFORE recursing since there is no point in traversing the whole
-    // tree if the root operation is x-x
-    if (Arity(instruction->opcode()) == 2 &&
-        instruction->operand(0) == instruction->operand(1)) {
-      switch (instruction->opcode()) {
-      case kAdd:
-        VLOG(10) << "x+x --> 2*x";
-        return ReplaceInstruction(
-            instruction, CreateBinary(kMultiply, instruction->operand(0),
-                                      CreateConstant(2)));
-      case kDivide:
-        VLOG(10) << "x/x --> 1";
-        return ReplaceInstruction(instruction, CreateConstant(1));
-      case kSubtract:
-        VLOG(10) << "x-x --> 0";
-        return ReplaceInstruction(instruction, CreateConstant(0));
-      default:
+      // Rewrites involving binary ops with both operands the same; this should
+      // happen BEFORE recursing since there is no point in traversing the whole
+      // tree if the root operation is x-x
+      if (Arity(instruction->opcode()) == 2 &&
+          instruction->operand(0) == instruction->operand(1)) {
+        switch (instruction->opcode()) {
+        case kAdd:
+          VLOG(10) << "x+x --> 2*x";
+          changed |= ReplaceInstruction(
+              instruction, CreateBinary(kMultiply, instruction->operand(0),
+                                        CreateConstant(2)));
+        case kDivide:
+          VLOG(10) << "x/x --> 1";
+          changed |= ReplaceInstruction(instruction, CreateConstant(1));
+        case kSubtract:
+          VLOG(10) << "x-x --> 0";
+          changed |= ReplaceInstruction(instruction, CreateConstant(0));
+        default:
+          break;
+        }
+      }
+
+      // TODO Other pruning optimizations combine (without x+x->2x)
+
+      // TODO Put above into HandlePruning
+
+      // Recurse on the instruction's operands before optimizing this one
+      for (auto operand : instruction->operands()) {
+        Run(operand);
+      }
+
+      switch (Arity(instruction->opcode())) {
+      case 1:
+        changed |= HandleUnary(instruction);
+        break;
+      case 2:
+        changed |= HandleBinary(instruction);
         break;
       }
-    }
 
-    // TODO Other pruning optimizations combine (without x+x->2x)
-
-    // TODO Put above into HandlePruning
-
-    // Recurse on the instruction's operands before optimizing this one
-    for (auto operand : instruction->operands()) {
-      changed |= Run(operand);
-    }
-
-    switch (Arity(instruction->opcode())) {
-    case 1:
-      changed |= HandleUnary(instruction);
-      break;
-    case 2:
-      changed |= HandleBinary(instruction);
-      break;
-    }
-
-    switch (instruction->opcode()) {
-    case kAdd:
-      changed |= HandleAdd(instruction);
-      break;
-    case kDivide:
-      changed |= HandleDivide(instruction);
-      break;
-    case kMaximum:
-      changed |= HandleMaximum(instruction);
-      break;
-    case kMinimum:
-      changed |= HandleMinimum(instruction);
-      break;
-    case kMultiply:
-      changed |= HandleMultiply(instruction);
-      break;
-    case kNegate:
-      changed |= HandleNegate(instruction);
-      break;
-    case kPower:
-      changed |= HandlePower(instruction);
-      break;
-    case kSubtract:
-      changed |= HandleSubtract(instruction);
-      break;
-    default:
-      break;
-    }
-
-    if (changed) {
-      Run(instruction);
-    }
-    return changed;
+      // Try for any opcode-specific rewrites
+      changed |= HandleOpcode(instruction);
+    } while (changed);
   }
 
   bool HandleUnary(Instruction *unary) {
@@ -171,6 +143,29 @@ public:
 
     // TODO Strength reduction
     return false;
+  }
+
+  bool HandleOpcode(Instruction *instruction) {
+    switch (instruction->opcode()) {
+    case kAdd:
+      return HandleAdd(instruction);
+    case kDivide:
+      return HandleDivide(instruction);
+    case kMaximum:
+      return HandleMaximum(instruction);
+    case kMinimum:
+      return HandleMinimum(instruction);
+    case kMultiply:
+      return HandleMultiply(instruction);
+    case kNegate:
+      return HandleNegate(instruction);
+    case kPower:
+      return HandlePower(instruction);
+    case kSubtract:
+      return HandleSubtract(instruction);
+    default:
+      return false;
+    }
   }
 
   bool HandleAdd(Instruction *add) {
