@@ -115,18 +115,20 @@ private:
           unary, CreateUnary(unary->opcode(), operand->operand(0)));
     }
 
+    // TODO More general: f(g(x)) --> g(x)
+    if (unary->opcode() == kAbs && IsNonNegative(operand->opcode())) {
+      VLOG(10) << "|f(x)| --> f(x) where f is non-negative";
+      return ReplaceInstruction(unary, operand);
+    }
+
+    // TODO acosh(cosh(x)) --> |x| and similar
+
     // TODO More general: f(g(x)) --> g(f(x))
     if (operand->opcode() == kNegate && IsOdd(unary->opcode())) {
       VLOG(10) << "f(-x) --> -f(x) where f is odd";
       return ReplaceInstruction(
           unary, CreateUnary(kNegate, CreateUnary(unary->opcode(),
                                                   operand->operand(0))));
-    }
-
-    // TODO More general: f(g(x)) --> g(x)
-    if (unary->opcode() == kAbs && IsNonNegative(operand->opcode())) {
-      VLOG(10) << "|f(x)| --> f(x) where f is non-negative";
-      return ReplaceInstruction(unary, operand);
     }
     return false;
   }
@@ -154,7 +156,7 @@ private:
 
     // TODO Fold expressions equal to 1: pow(1,x), pow(x,0), pythag
 
-    // TODO Fold identity elements: x+0, 1*x, pow(x,1)
+    // TODO Fold identity elements: x-0, x+0, 1*x, pow(x,1)
 
     // Homomorphism-style rewrites of the form f(g(x),g(y)) --> g(h(x,y))
     if (lhs->opcode() == rhs->opcode()) {

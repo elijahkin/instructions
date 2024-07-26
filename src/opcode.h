@@ -3,12 +3,22 @@
 
 enum Opcode {
   kAbs,
+  kAcos,
+  kAcosh,
   kAdd,
+  kAsin,
+  kAsinh,
+  kAtan,
+  kAtanh,
   kAtan2,
+  kCbrt,
   kConstant,
   kCos,
+  kCosh,
   kDivide,
+  kErf,
   kExp,
+  kGamma,
   kLog,
   kMaximum,
   kMinimum,
@@ -18,6 +28,8 @@ enum Opcode {
   kPower,
   kRng,
   kSin,
+  kSinh,
+  kSqrt,
   kSubtract,
   kTan,
   kTanh
@@ -27,18 +39,38 @@ std::string opcode_to_string(Opcode opcode) {
   switch (opcode) {
   case kAbs:
     return "abs";
+  case kAcos:
+    return "acos";
+  case kAcosh:
+    return "acosh";
   case kAdd:
     return "add";
+  case kAsin:
+    return "asin";
+  case kAsinh:
+    return "asinh";
+  case kAtan:
+    return "atan";
+  case kAtanh:
+    return "atanh";
   case kAtan2:
     return "atan2";
+  case kCbrt:
+    return "cbrt";
   case kConstant:
     return "constant";
   case kCos:
-    return "cosine";
+    return "cos";
+  case kCosh:
+    return "cosh";
   case kDivide:
     return "divide";
+  case kErf:
+    return "erf";
   case kExp:
     return "exp";
+  case kGamma:
+    return "gamma";
   case kLog:
     return "log";
   case kMaximum:
@@ -56,7 +88,11 @@ std::string opcode_to_string(Opcode opcode) {
   case kRng:
     return "rng";
   case kSin:
-    return "sine";
+    return "sin";
+  case kSinh:
+    return "sinh";
+  case kSqrt:
+    return "sqrt";
   case kSubtract:
     return "subtract";
   case kTan:
@@ -73,11 +109,23 @@ int Arity(Opcode opcode) {
   case kRng:
     return 0;
   case kAbs:
+  case kAcos:
+  case kAcosh:
+  case kAsin:
+  case kAsinh:
+  case kAtan:
+  case kAtanh:
+  case kCbrt:
   case kCos:
+  case kCosh:
+  case kErf:
   case kExp:
+  case kGamma:
   case kLog:
   case kNegate:
   case kSin:
+  case kSinh:
+  case kSqrt:
   case kTan:
   case kTanh:
     return 1;
@@ -97,6 +145,7 @@ bool IsEven(Opcode opcode) {
   switch (opcode) {
   case kAbs:
   case kCos:
+  case kCosh:
     return true;
   default:
     return false;
@@ -105,8 +154,15 @@ bool IsEven(Opcode opcode) {
 
 bool IsOdd(Opcode opcode) {
   switch (opcode) {
+  case kAsin:
+  case kAsinh:
+  case kAtan:
+  case kAtanh:
+  case kCbrt:
+  case kErf:
   case kNegate:
   case kSin:
+  case kSinh:
   case kTan:
   case kTanh:
     return true;
@@ -117,8 +173,17 @@ bool IsOdd(Opcode opcode) {
 
 bool IsIncreasing(Opcode opcode) {
   switch (opcode) {
+  case kAcosh:
+  case kAsin:
+  case kAsinh:
+  case kAtan:
+  case kAtanh:
+  case kCbrt:
+  case kErf:
   case kExp:
   case kLog:
+  case kSqrt:
+  case kSinh:
   case kTanh:
     return true;
   default:
@@ -128,8 +193,23 @@ bool IsIncreasing(Opcode opcode) {
 
 bool IsDecreasing(Opcode opcode) {
   switch (opcode) {
+  case kAcos:
   case kNegate:
     return true;
+  default:
+    return false;
+  }
+}
+
+bool IsNonNegative(Opcode opcode) {
+  switch (opcode) {
+  case kAcos:
+  case kAcosh:
+  case kCosh:
+  case kExp:
+  case kSqrt:
+    return true;
+  // TODO case kConstant:
   default:
     return false;
   }
@@ -155,16 +235,6 @@ bool IsCommutative(Opcode opcode) {
   case kMinimum:
   case kMultiply:
     return true;
-  default:
-    return false;
-  }
-}
-
-bool IsNonNegative(Opcode opcode) {
-  switch (opcode) {
-  case kExp:
-    return true;
-  // TODO case kConstant:
   default:
     return false;
   }
