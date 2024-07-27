@@ -220,12 +220,28 @@ bool IsNonNegative(Opcode opcode) {
 
 std::optional<Opcode> Inverse(Opcode opcode) {
   switch (opcode) {
+  case kAsinh:
+    return kSinh;
+  case kAtanh:
+    return kTanh;
   case kExp:
     return kLog;
+  case kCos:
+    return kAcos;
+  case kCosh:
+    return kAcosh;
   case kLog:
     return kExp;
   case kNegate:
     return kNegate;
+  case kSin:
+    return kAsin;
+  case kSinh:
+    return kAsinh;
+  case kTan:
+    return kAtan;
+  case kTanh:
+    return kAtanh;
   default:
     return std::nullopt;
   }

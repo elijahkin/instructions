@@ -187,5 +187,8 @@ double Evaluate(Instruction *instruction) {
     return tan(evaluated[0]);
   case kTanh:
     return tanh(evaluated[0]);
+  // TODO Eventually make sure all opcodes are implemented
+  default:
+    return 0;
   }
 }

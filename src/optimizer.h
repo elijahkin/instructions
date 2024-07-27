@@ -124,14 +124,17 @@ private:
       return ReplaceInstruction(unary, operand);
     }
 
-    // TODO acosh(cosh(x)) --> |x| and similar
-
     // TODO More general: f(g(x)) --> g(f(x))
     if (operand->opcode() == kNegate && IsOdd(unary->opcode())) {
       VLOG(10) << "f(-x) --> -f(x) where f is odd";
       return ReplaceInstruction(
           unary, CreateUnary(kNegate, CreateUnary(unary->opcode(),
                                                   operand->operand(0))));
+    }
+
+    if (unary->opcode() == kAcosh && operand->opcode() == kCosh) {
+      VLOG(10) << "acosh(cosh(x)) --> |x|";
+      return ReplaceInstruction(unary, CreateUnary(kAbs, operand->operand(0)));
     }
     return false;
   }

@@ -187,18 +187,6 @@ void multiply_powers_test() {
   assert(mul->opcode() == kPower && IsConstantWithValue(mul->operand(1), 6));
 }
 
-void multiply_power_with_parameter_test() {
-  Instruction *x = CreateParameter();
-
-  Instruction *two = CreateConstant(2);
-  Instruction *pow = CreateBinary(kPower, x, two);
-  Instruction *mul = CreateBinary(kMultiply, x, pow);
-
-  Optimizer opt;
-  opt.Run(mul);
-  assert(mul->opcode() == kPower && IsConstantWithValue(mul->operand(1), 3));
-}
-
 void divide_power_test() {
   Instruction *x = CreateParameter();
 
@@ -447,6 +435,71 @@ void subtract_logs_to_log_divide_test() {
   assert(sub->opcode() == kLog && sub->operand(0)->opcode() == kDivide);
 }
 
+void multiply_power_with_parameter_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *two = CreateConstant(2);
+  Instruction *pow = CreateBinary(kPower, x, two);
+  Instruction *mul = CreateBinary(kMultiply, x, pow);
+
+  Optimizer opt;
+  opt.Run(mul);
+  assert(mul->opcode() == kPower && IsConstantWithValue(mul->operand(1), 3));
+}
+
+void sqrt_square_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *two = CreateConstant(2);
+  Instruction *pow = CreateBinary(kPower, x, two);
+  Instruction *sqrt = CreateUnary(kSqrt, pow);
+
+  Optimizer opt;
+  opt.Run(sqrt);
+  assert(sqrt->opcode() == kAbs);
+}
+
+void inv_trigonometric_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *cos_acos = CreateUnary(kCos, CreateUnary(kAcos, x));
+  Instruction *sin_asin = CreateUnary(kSin, CreateUnary(kAsin, x));
+  Instruction *tan_atan = CreateUnary(kTan, CreateUnary(kAtan, x));
+
+  Optimizer opt;
+  opt.Run(cos_acos);
+  assert(cos_acos->opcode() == kParameter);
+  opt.Run(sin_asin);
+  assert(sin_asin->opcode() == kParameter);
+  opt.Run(tan_atan);
+  assert(tan_atan->opcode() == kParameter);
+}
+
+void inv_hyperbolic_test() {
+  Instruction *x = CreateParameter();
+
+  Instruction *acosh_cosh = CreateUnary(kAcosh, CreateUnary(kCosh, x));
+  Instruction *asinh_sinh = CreateUnary(kAsinh, CreateUnary(kSinh, x));
+  Instruction *atanh_tanh = CreateUnary(kAtanh, CreateUnary(kTanh, x));
+  Instruction *cosh_acosh = CreateUnary(kCosh, CreateUnary(kAcosh, x));
+  Instruction *sinh_asinh = CreateUnary(kSinh, CreateUnary(kAsinh, x));
+  Instruction *tanh_atanh = CreateUnary(kTanh, CreateUnary(kAtanh, x));
+
+  Optimizer opt;
+  opt.Run(acosh_cosh);
+  assert(acosh_cosh->opcode() == kAbs);
+  opt.Run(asinh_sinh);
+  assert(asinh_sinh->opcode() == kParameter);
+  opt.Run(atanh_tanh);
+  assert(atanh_tanh->opcode() == kParameter);
+  opt.Run(cosh_acosh);
+  assert(cosh_acosh->opcode() == kParameter);
+  opt.Run(sinh_asinh);
+  assert(sinh_asinh->opcode() == kParameter);
+  opt.Run(tanh_atanh);
+  assert(tanh_atanh->opcode() == kParameter);
+}
+
 int main() {
   unary_constant_folding_test();
   binary_constant_folding_test();
@@ -455,10 +508,11 @@ int main() {
   odd_negate_test();
   monotone_test();
   inverses_test();
+  inv_trigonometric_test();
+  inv_hyperbolic_test();
 
   multiply_exp_with_exp_neg_test();
   multiply_powers_test();
-  // multiply_power_with_parameter_test();
   divide_power_test();
   divide_constant_to_multiply_test();
   divide_sin_cos_to_tan_test();
@@ -481,5 +535,8 @@ int main() {
   one_pow_test();
   power_power_test();
   subtract_logs_to_log_divide_test();
+
+  // multiply_power_with_parameter_test();
+  // sqrt_square_test();
   return 0;
 }
