@@ -20,12 +20,15 @@ public:
           changed |= ReplaceInstruction(
               instruction, CreateBinary(kMultiply, instruction->operand(0),
                                         CreateConstant(2)));
+          break;
         case kDivide:
           VLOG(10) << "x/x --> 1";
           changed |= ReplaceInstruction(instruction, CreateConstant(1));
+          break;
         case kSubtract:
           VLOG(10) << "x-x --> 0";
           changed |= ReplaceInstruction(instruction, CreateConstant(0));
+          break;
         default:
           break;
         }
