@@ -299,32 +299,6 @@ void monotone_test() {
   assert(min2->opcode() == kNegate && min2->operand(0)->opcode() == kMaximum);
 }
 
-void multiply_abs_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
-
-  Instruction *abs1 = CreateUnary(kAbs, x);
-  Instruction *abs2 = CreateUnary(kAbs, y);
-  Instruction *mul = CreateBinary(kMultiply, abs1, abs2);
-
-  Optimizer opt;
-  opt.Run(mul);
-  assert(mul->opcode() == kAbs && mul->operand(0)->opcode() == kMultiply);
-}
-
-void multiply_exp_to_exp_add_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
-
-  Instruction *exp_x = CreateUnary(kExp, x);
-  Instruction *exp_y = CreateUnary(kExp, y);
-  Instruction *mul = CreateBinary(kMultiply, exp_x, exp_y);
-
-  Optimizer opt;
-  opt.Run(mul);
-  assert(mul->opcode() == kExp && mul->operand(0)->opcode() == kAdd);
-}
-
 void multiply_power_common_exponent_test() {
   Instruction *x = CreateParameter();
   Instruction *y = CreateParameter();
@@ -422,19 +396,6 @@ void power_power_test() {
   assert(pow2->operand(1)->opcode() == kMultiply);
 }
 
-void subtract_logs_to_log_divide_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
-
-  Instruction *log_x = CreateUnary(kLog, x);
-  Instruction *log_y = CreateUnary(kLog, y);
-  Instruction *sub = CreateBinary(kSubtract, log_x, log_y);
-
-  Optimizer opt;
-  opt.Run(sub);
-  assert(sub->opcode() == kLog && sub->operand(0)->opcode() == kDivide);
-}
-
 void multiply_power_with_parameter_test() {
   Instruction *x = CreateParameter();
 
@@ -500,6 +461,33 @@ void inv_hyperbolic_test() {
   assert(tanh_atanh->opcode() == kParameter);
 }
 
+void homomorphism_test() {
+  Instruction *x = CreateParameter();
+  Instruction *y = CreateParameter();
+
+  Instruction *add_logs =
+      CreateBinary(kAdd, CreateUnary(kLog, x), CreateUnary(kLog, y));
+  Instruction *mul_abss =
+      CreateBinary(kMultiply, CreateUnary(kAbs, x), CreateUnary(kAbs, y));
+  Instruction *mul_exps =
+      CreateBinary(kMultiply, CreateUnary(kExp, x), CreateUnary(kExp, y));
+  Instruction *sub_logs =
+      CreateBinary(kSubtract, CreateUnary(kLog, x), CreateUnary(kLog, y));
+
+  Optimizer opt;
+  opt.Run(add_logs);
+  assert(add_logs->opcode() == kLog &&
+         add_logs->operand(0)->opcode() == kMultiply);
+  opt.Run(mul_abss);
+  assert(mul_abss->opcode() == kAbs &&
+         mul_abss->operand(0)->opcode() == kMultiply);
+  opt.Run(mul_exps);
+  assert(mul_exps->opcode() == kExp && mul_exps->operand(0)->opcode() == kAdd);
+  opt.Run(sub_logs);
+  assert(sub_logs->opcode() == kLog &&
+         sub_logs->operand(0)->opcode() == kDivide);
+}
+
 int main() {
   unary_constant_folding_test();
   binary_constant_folding_test();
@@ -508,6 +496,7 @@ int main() {
   odd_negate_test();
   monotone_test();
   inverses_test();
+  homomorphism_test();
   inv_trigonometric_test();
   inv_hyperbolic_test();
 
@@ -524,8 +513,6 @@ int main() {
   factor_add_multiply_test();
   add_to_multiply_test();
   divide_divide_test();
-  multiply_abs_test();
-  multiply_exp_to_exp_add_test();
   multiply_power_common_exponent_test();
   multiply_power_common_base_test();
   negate_subtract_folding_test();
@@ -534,8 +521,8 @@ int main() {
   zero_pow_test();
   one_pow_test();
   power_power_test();
-  subtract_logs_to_log_divide_test();
 
+  // Currently failing tests
   // multiply_power_with_parameter_test();
   // sqrt_square_test();
   return 0;

@@ -165,6 +165,7 @@ private:
     // TODO Fold identity elements: x-0, x+0, 1*x, pow(x,1)
 
     // Homomorphism-style rewrites of the form f(g(x),g(y)) --> g(h(x,y))
+    // TODO divide exps, divide abss
     if (lhs->opcode() == rhs->opcode()) {
       std::optional<Opcode> new_op;
       if (binary->opcode() == kAdd && lhs->opcode() == kLog) {
