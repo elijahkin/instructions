@@ -420,6 +420,33 @@ void sqrt_square_test() {
   assert(sqrt->opcode() == kAbs);
 }
 
+void mul_negates_test() {
+  Instruction *x = CreateParameter();
+  Instruction *y = CreateParameter();
+
+  Instruction *neg_x = CreateUnary(kNegate, x);
+  Instruction *neg_y = CreateUnary(kNegate, y);
+  Instruction *mul = CreateBinary(kMultiply, neg_x, neg_y);
+
+  Optimizer opt;
+  opt.Run(mul);
+  assert(mul->operand(0)->opcode() == kParameter &&
+         mul->operand(1)->opcode() == kParameter);
+}
+
+void mul_div_test() {
+  Instruction *x = CreateParameter();
+  Instruction *y = CreateParameter();
+  Instruction *z = CreateParameter();
+
+  Instruction *div = CreateBinary(kDivide, y, z);
+  Instruction *mul = CreateBinary(kMultiply, x, div);
+
+  Optimizer opt;
+  opt.Run(mul);
+  assert(mul->opcode() == kDivide);
+}
+
 void inv_trigonometric_test() {
   Instruction *x = CreateParameter();
 
@@ -467,6 +494,10 @@ void homomorphism_test() {
 
   Instruction *add_logs =
       CreateBinary(kAdd, CreateUnary(kLog, x), CreateUnary(kLog, y));
+  Instruction *div_abss =
+      CreateBinary(kDivide, CreateUnary(kAbs, x), CreateUnary(kAbs, y));
+  Instruction *div_exps =
+      CreateBinary(kDivide, CreateUnary(kExp, x), CreateUnary(kExp, y));
   Instruction *mul_abss =
       CreateBinary(kMultiply, CreateUnary(kAbs, x), CreateUnary(kAbs, y));
   Instruction *mul_exps =
@@ -478,6 +509,12 @@ void homomorphism_test() {
   opt.Run(add_logs);
   assert(add_logs->opcode() == kLog &&
          add_logs->operand(0)->opcode() == kMultiply);
+  opt.Run(div_abss);
+  assert(div_abss->opcode() == kAbs &&
+         div_abss->operand(0)->opcode() == kDivide);
+  opt.Run(div_exps);
+  assert(div_exps->opcode() == kExp &&
+         div_exps->operand(0)->opcode() == kSubtract);
   opt.Run(mul_abss);
   assert(mul_abss->opcode() == kAbs &&
          mul_abss->operand(0)->opcode() == kMultiply);
@@ -525,5 +562,7 @@ int main() {
   // Currently failing tests
   // multiply_power_with_parameter_test();
   // sqrt_square_test();
+  // mul_negates_test();
+  // mul_div_test();
   return 0;
 }

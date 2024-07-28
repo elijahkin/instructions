@@ -165,12 +165,17 @@ private:
     // TODO Fold identity elements: x-0, x+0, 1*x, pow(x,1)
 
     // Homomorphism-style rewrites of the form f(g(x),g(y)) --> g(h(x,y))
-    // TODO divide exps, divide abss
     if (lhs->opcode() == rhs->opcode()) {
       std::optional<Opcode> new_op;
       if (binary->opcode() == kAdd && lhs->opcode() == kLog) {
         VLOG(10) << "log(x)+log(y) --> log(x*y)";
         new_op = kMultiply;
+      } else if (binary->opcode() == kDivide && lhs->opcode() == kAbs) {
+        VLOG(10) << "|x|/|y| --> |x/y|";
+        new_op = kDivide;
+      } else if (binary->opcode() == kDivide && lhs->opcode() == kExp) {
+        VLOG(10) << "exp(x)/exp(y) --> exp(x-y)";
+        new_op = kSubtract;
       } else if (binary->opcode() == kMultiply && lhs->opcode() == kAbs) {
         VLOG(10) << "|x|*|y| --> |x*y|";
         new_op = kMultiply;
@@ -221,14 +226,14 @@ private:
     // TODO Unify these and make them more general, i.e. xy+zx --> x(y+z)
     if (lhs->opcode() == kMultiply && rhs->opcode() == kMultiply) {
       if (lhs->operand(0) == rhs->operand(0)) {
-        VLOG(10) << "xy+xz --> x(y+z)";
+        VLOG(10) << "x*y+x*z --> x*(y+z)";
         return ReplaceInstruction(
             add,
             CreateBinary(kMultiply, lhs->operand(0),
                          CreateBinary(kAdd, lhs->operand(1), rhs->operand(1))));
       }
       if (lhs->operand(1) == rhs->operand(1)) {
-        VLOG(10) << "xz+yz --> (x+y)z";
+        VLOG(10) << "x*z+y*z --> (x+y)*z";
         return ReplaceInstruction(
             add,
             CreateBinary(kMultiply,

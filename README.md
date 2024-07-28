@@ -22,11 +22,15 @@ exp.6 = exp(add.5)
 ## To-Do List
 - Major:
   - More optimization passes
+  - Tests for every rewrite
   - Evaluator
-  - Shape and matrix operations
+  - Shape, IsElementwise, and matrix operations
   - Graph visualizer
   - Autograd
   - Nicer pattern matching
+  - Special ops (kRelu, kKronecker)
+  - Domain inference (for log, sqrt, divide, atan2, power)
+  - Fusing ops at the end (fma, expm1, log1p)
 - Minor:
   - Better testing syntax
   - Prettier printing
