@@ -18,16 +18,19 @@ public:
         case kAdd:
           VLOG(10) << "x+x --> 2*x";
           changed |= ReplaceInstruction(
-              instruction, CreateBinary(kMultiply, instruction->operand(0),
-                                        CreateConstant(2)));
+              instruction,
+              CreateBinary(kMultiply, instruction->operand(0),
+                           CreateConstant(instruction->shape(), 2)));
           break;
         case kDivide:
           VLOG(10) << "x/x --> 1";
-          changed |= ReplaceInstruction(instruction, CreateConstant(1));
+          changed |= ReplaceInstruction(
+              instruction, CreateConstant(instruction->shape(), 1));
           break;
         case kSubtract:
           VLOG(10) << "x-x --> 0";
-          changed |= ReplaceInstruction(instruction, CreateConstant(0));
+          changed |= ReplaceInstruction(
+              instruction, CreateConstant(instruction->shape(), 0));
           break;
         default:
           break;
@@ -101,7 +104,8 @@ private:
     // TODO Unify with analogous rewrite in HandleBinary
     if (AllConstantOperands(unary)) {
       VLOG(10) << "Folding unary operation with constant operand";
-      return ReplaceInstruction(unary, CreateConstant(Evaluate(unary)));
+      return ReplaceInstruction(
+          unary, CreateConstant(unary->shape(), Evaluate(unary)));
     }
 
     if (auto inv_op = Inverse(unary->opcode()); inv_op.has_value()) {
@@ -148,7 +152,8 @@ private:
     // Fold operations whose every operand is constant
     if (AllConstantOperands(binary)) {
       VLOG(10) << "Folding binary operation with all constant operands";
-      return ReplaceInstruction(binary, CreateConstant(Evaluate(binary)));
+      return ReplaceInstruction(
+          binary, CreateConstant(binary->shape(), Evaluate(binary)));
     }
 
     // Canonicalize constants to be on the lhs for commutative ops
@@ -256,7 +261,8 @@ private:
       VLOG(10) << "x/c --> x*c";
       return ReplaceInstruction(
           divide,
-          CreateBinary(kMultiply, lhs, CreateConstant(1 / Evaluate(rhs))));
+          CreateBinary(kMultiply, lhs,
+                       CreateConstant(lhs->shape(), 1 / Evaluate(rhs))));
     }
 
     if (lhs->opcode() == kSin && rhs->opcode() == kCos &&
@@ -400,7 +406,7 @@ private:
 
     if (IsConstantWithValue(rhs, 0)) {
       VLOG(10) << "pow(x,0) --> 1";
-      return ReplaceInstruction(power, CreateConstant(1));
+      return ReplaceInstruction(power, CreateConstant(power->shape(), 1));
     }
 
     if (IsConstantWithValue(rhs, 1)) {

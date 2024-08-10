@@ -4,23 +4,28 @@
 
 #include "logging.h"
 #include "opcode.h"
+#include "shape.h"
 
 int num_created_instructions = 0;
 
 class Instruction {
-protected:
+private:
+  const Shape *shape_;
   Opcode opcode_;
   std::vector<Instruction *> operands_;
   int id_;
 
-  Instruction(Opcode opcode, const std::vector<Instruction *> &operands) {
-    opcode_ = opcode;
+public:
+  Instruction(const Shape *shape, Opcode opcode,
+              const std::vector<Instruction *> &operands)
+      : shape_(shape), opcode_(opcode) {
     operands_ = operands;
     id_ = num_created_instructions;
     num_created_instructions++;
   }
 
-public:
+  const Shape *shape() { return shape_; }
+
   Opcode opcode() { return opcode_; }
 
   std::vector<Instruction *> operands() { return operands_; }
@@ -67,18 +72,28 @@ public:
   friend bool IsConstantWithValue(Instruction *instruction, double value);
 };
 
-Instruction *CreateParameter() { return new Instruction(kParameter, {}); }
-
-Instruction *CreateRng() { return new Instruction(kRng, {}); }
-
-Instruction *CreateUnary(Opcode opcode, Instruction *operand) {
-  assert(Arity(opcode) == 1);
-  return new Instruction(opcode, {operand});
+Instruction *CreateParameter(const Shape *shape) {
+  return new Instruction(shape, kParameter, {});
 }
 
+Instruction *CreateRng(const Shape *shape) {
+  return new Instruction(shape, kRng, {});
+}
+
+// Handle creation of elementwise unary instructions including:
+// kAbs, kAcos, kAcosh, kAsin, kAsinh, kAtan, kAtanh, kCbrt, kCos, kCosh, kErf,
+// kExp, kGamma, kLog, kNegate, kSin, kSinh, kSqrt, kTan, kTanh
+Instruction *CreateUnary(Opcode opcode, Instruction *operand) {
+  assert(Arity(opcode) == 1);
+  return new Instruction(operand->shape(), opcode, {operand});
+}
+
+// Handle creation of elementwise binary instructions including:
+// kAdd, kAtan2, kDivide, kMaximum, kMinimum, kMultiply, kPower, kSubtract
 Instruction *CreateBinary(Opcode opcode, Instruction *lhs, Instruction *rhs) {
   assert(Arity(opcode) == 2);
-  return new Instruction(opcode, {lhs, rhs});
+  // TODO Check that lhs and rhs have equal shapes
+  return new Instruction(lhs->shape(), opcode, {lhs, rhs});
 }
 
 // TODO maybe use std::optional for value instead of creating a new class
@@ -86,18 +101,19 @@ class ConstantInstruction : public Instruction {
 private:
   double value_;
 
-  ConstantInstruction(double value) : Instruction(kConstant, {}) {
+public:
+  ConstantInstruction(const Shape *shape, double value)
+      : Instruction(shape, kConstant, {}) {
     value_ = value;
   }
 
-public:
   double value() { return value_; }
 
   friend Instruction *CreateConstant(double value);
 };
 
-Instruction *CreateConstant(double value) {
-  return new ConstantInstruction(value);
+Instruction *CreateConstant(const Shape *shape, double value) {
+  return new ConstantInstruction(shape, value);
 }
 
 bool IsConstantWithValue(Instruction *instruction, double value) {

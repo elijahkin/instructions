@@ -1,7 +1,9 @@
 #include "optimizer.h"
 
+const Shape *one_by_one = new Shape({1, 1});
+
 void unary_constant_folding_test() {
-  Instruction *c = CreateConstant(5);
+  Instruction *c = CreateConstant(one_by_one, 5);
 
   Instruction *abs = CreateUnary(kAbs, c);
   Instruction *cos = CreateUnary(kCos, c);
@@ -32,8 +34,8 @@ void unary_constant_folding_test() {
 }
 
 void binary_constant_folding_test() {
-  Instruction *c1 = CreateConstant(2);
-  Instruction *c2 = CreateConstant(3);
+  Instruction *c1 = CreateConstant(one_by_one, 2);
+  Instruction *c2 = CreateConstant(one_by_one, 3);
 
   Instruction *add = CreateBinary(kAdd, c1, c2);
   Instruction *div = CreateBinary(kDivide, c1, c2);
@@ -61,8 +63,8 @@ void binary_constant_folding_test() {
 }
 
 void binary_canonicalization_test() {
-  Instruction *x = CreateParameter();
-  Instruction *c = CreateConstant(3);
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *c = CreateConstant(one_by_one, 3);
 
   Instruction *add = CreateBinary(kAdd, x, c);
   Instruction *mul = CreateBinary(kMultiply, x, c);
@@ -77,8 +79,8 @@ void binary_canonicalization_test() {
 }
 
 void fold_add_0_test() {
-  Instruction *x = CreateParameter();
-  Instruction *c = CreateConstant(0);
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *c = CreateConstant(one_by_one, 0);
 
   Instruction *add = CreateBinary(kAdd, c, x);
 
@@ -88,8 +90,8 @@ void fold_add_0_test() {
 }
 
 void multiply_zero_test() {
-  Instruction *c = CreateConstant(0);
-  Instruction *x = CreateParameter();
+  Instruction *c = CreateConstant(one_by_one, 0);
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *mul = CreateBinary(kMultiply, c, x);
 
@@ -99,8 +101,8 @@ void multiply_zero_test() {
 }
 
 void multiply_one_test() {
-  Instruction *c = CreateConstant(1);
-  Instruction *x = CreateParameter();
+  Instruction *c = CreateConstant(one_by_one, 1);
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *mul = CreateBinary(kMultiply, c, x);
 
@@ -110,7 +112,7 @@ void multiply_one_test() {
 }
 
 void even_negate_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *neg = CreateUnary(kNegate, x);
   Instruction *abs = CreateUnary(kAbs, neg);
@@ -124,7 +126,7 @@ void even_negate_test() {
 }
 
 void odd_negate_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *neg = CreateUnary(kNegate, x);
   Instruction *sin = CreateUnary(kSin, neg);
@@ -141,7 +143,7 @@ void odd_negate_test() {
 }
 
 void inverses_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *exp = CreateUnary(kExp, x);
   Instruction *log = CreateUnary(kLog, x);
@@ -161,7 +163,7 @@ void inverses_test() {
 }
 
 void multiply_exp_with_exp_neg_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *exp_x = CreateUnary(kExp, x);
   Instruction *neg = CreateUnary(kNegate, x);
@@ -174,11 +176,11 @@ void multiply_exp_with_exp_neg_test() {
 }
 
 void multiply_powers_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
-  Instruction *two = CreateConstant(2);
+  Instruction *two = CreateConstant(one_by_one, 2);
   Instruction *pow1 = CreateBinary(kPower, x, two);
-  Instruction *four = CreateConstant(4);
+  Instruction *four = CreateConstant(one_by_one, 4);
   Instruction *pow2 = CreateBinary(kPower, x, four);
   Instruction *mul = CreateBinary(kMultiply, pow1, pow2);
 
@@ -188,11 +190,11 @@ void multiply_powers_test() {
 }
 
 void divide_power_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
-  Instruction *three = CreateConstant(3);
+  Instruction *three = CreateConstant(one_by_one, 3);
   Instruction *pow = CreateBinary(kPower, x, three);
-  Instruction *one = CreateConstant(1);
+  Instruction *one = CreateConstant(one_by_one, 1);
   Instruction *div = CreateBinary(kDivide, one, pow);
 
   Optimizer opt;
@@ -201,9 +203,9 @@ void divide_power_test() {
 }
 
 void divide_constant_to_multiply_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
-  Instruction *two = CreateConstant(2);
+  Instruction *two = CreateConstant(one_by_one, 2);
   Instruction *div = CreateBinary(kDivide, x, two);
 
   Optimizer opt;
@@ -213,7 +215,7 @@ void divide_constant_to_multiply_test() {
 }
 
 void divide_sin_cos_to_tan_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *sin = CreateUnary(kSin, x);
   Instruction *cos = CreateUnary(kCos, x);
@@ -225,7 +227,7 @@ void divide_sin_cos_to_tan_test() {
 }
 
 void abs_exp_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *exp = CreateUnary(kExp, x);
   Instruction *abs = CreateUnary(kAbs, exp);
@@ -236,9 +238,9 @@ void abs_exp_test() {
 }
 
 void factor_add_multiply_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
-  Instruction *z = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *y = CreateParameter(one_by_one);
+  Instruction *z = CreateParameter(one_by_one);
 
   Instruction *lhs = CreateBinary(kMultiply, x, y);
   Instruction *rhs = CreateBinary(kMultiply, x, z);
@@ -250,7 +252,7 @@ void factor_add_multiply_test() {
 }
 
 void add_to_multiply_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *add = CreateBinary(kAdd, x, x);
 
@@ -260,9 +262,9 @@ void add_to_multiply_test() {
 }
 
 void divide_divide_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
-  Instruction *z = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *y = CreateParameter(one_by_one);
+  Instruction *z = CreateParameter(one_by_one);
 
   Instruction *div_lhs = CreateBinary(kDivide, CreateBinary(kDivide, x, y), z);
   Instruction *div_rhs = CreateBinary(kDivide, x, CreateBinary(kDivide, y, z));
@@ -275,8 +277,8 @@ void divide_divide_test() {
 }
 
 void monotone_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *y = CreateParameter(one_by_one);
 
   Instruction *exp1 = CreateUnary(kExp, x);
   Instruction *exp2 = CreateUnary(kExp, y);
@@ -300,9 +302,9 @@ void monotone_test() {
 }
 
 void multiply_power_common_exponent_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
-  Instruction *z = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *y = CreateParameter(one_by_one);
+  Instruction *z = CreateParameter(one_by_one);
 
   Instruction *pow1 = CreateBinary(kPower, x, z);
   Instruction *pow2 = CreateBinary(kPower, y, z);
@@ -314,9 +316,9 @@ void multiply_power_common_exponent_test() {
 }
 
 void multiply_power_common_base_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
-  Instruction *z = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *y = CreateParameter(one_by_one);
+  Instruction *z = CreateParameter(one_by_one);
 
   Instruction *pow1 = CreateBinary(kPower, x, y);
   Instruction *pow2 = CreateBinary(kPower, x, z);
@@ -328,8 +330,8 @@ void multiply_power_common_base_test() {
 }
 
 void negate_subtract_folding_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *y = CreateParameter(one_by_one);
 
   Instruction *sub = CreateBinary(kSubtract, x, y);
   Instruction *neg = CreateUnary(kNegate, sub);
@@ -340,8 +342,8 @@ void negate_subtract_folding_test() {
 }
 
 void pow_zero_test() {
-  Instruction *x = CreateParameter();
-  Instruction *c = CreateConstant(0);
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *c = CreateConstant(one_by_one, 0);
 
   Instruction *pow = CreateBinary(kPower, x, c);
 
@@ -351,8 +353,8 @@ void pow_zero_test() {
 }
 
 void pow_one_test() {
-  Instruction *x = CreateParameter();
-  Instruction *c = CreateConstant(1);
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *c = CreateConstant(one_by_one, 1);
 
   Instruction *pow = CreateBinary(kPower, x, c);
 
@@ -362,8 +364,8 @@ void pow_one_test() {
 }
 
 void zero_pow_test() {
-  Instruction *c = CreateConstant(0);
-  Instruction *x = CreateParameter();
+  Instruction *c = CreateConstant(one_by_one, 0);
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *pow = CreateBinary(kPower, c, x);
 
@@ -373,8 +375,8 @@ void zero_pow_test() {
 }
 
 void one_pow_test() {
-  Instruction *c = CreateConstant(1);
-  Instruction *x = CreateParameter();
+  Instruction *c = CreateConstant(one_by_one, 1);
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *pow = CreateBinary(kPower, c, x);
 
@@ -384,9 +386,9 @@ void one_pow_test() {
 }
 
 void power_power_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
-  Instruction *z = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *y = CreateParameter(one_by_one);
+  Instruction *z = CreateParameter(one_by_one);
 
   Instruction *pow1 = CreateBinary(kPower, x, y);
   Instruction *pow2 = CreateBinary(kPower, pow1, z);
@@ -397,9 +399,9 @@ void power_power_test() {
 }
 
 void multiply_power_with_parameter_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
-  Instruction *two = CreateConstant(2);
+  Instruction *two = CreateConstant(one_by_one, 2);
   Instruction *pow = CreateBinary(kPower, x, two);
   Instruction *mul = CreateBinary(kMultiply, x, pow);
 
@@ -409,9 +411,9 @@ void multiply_power_with_parameter_test() {
 }
 
 void sqrt_square_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
-  Instruction *two = CreateConstant(2);
+  Instruction *two = CreateConstant(one_by_one, 2);
   Instruction *pow = CreateBinary(kPower, x, two);
   Instruction *sqrt = CreateUnary(kSqrt, pow);
 
@@ -421,8 +423,8 @@ void sqrt_square_test() {
 }
 
 void mul_negates_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *y = CreateParameter(one_by_one);
 
   Instruction *neg_x = CreateUnary(kNegate, x);
   Instruction *neg_y = CreateUnary(kNegate, y);
@@ -435,9 +437,9 @@ void mul_negates_test() {
 }
 
 void mul_div_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
-  Instruction *z = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *y = CreateParameter(one_by_one);
+  Instruction *z = CreateParameter(one_by_one);
 
   Instruction *div = CreateBinary(kDivide, y, z);
   Instruction *mul = CreateBinary(kMultiply, x, div);
@@ -448,7 +450,7 @@ void mul_div_test() {
 }
 
 void inv_trigonometric_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *cos_acos = CreateUnary(kCos, CreateUnary(kAcos, x));
   Instruction *sin_asin = CreateUnary(kSin, CreateUnary(kAsin, x));
@@ -464,7 +466,7 @@ void inv_trigonometric_test() {
 }
 
 void inv_hyperbolic_test() {
-  Instruction *x = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
 
   Instruction *acosh_cosh = CreateUnary(kAcosh, CreateUnary(kCosh, x));
   Instruction *asinh_sinh = CreateUnary(kAsinh, CreateUnary(kSinh, x));
@@ -489,8 +491,8 @@ void inv_hyperbolic_test() {
 }
 
 void homomorphism_test() {
-  Instruction *x = CreateParameter();
-  Instruction *y = CreateParameter();
+  Instruction *x = CreateParameter(one_by_one);
+  Instruction *y = CreateParameter(one_by_one);
 
   Instruction *add_logs =
       CreateBinary(kAdd, CreateUnary(kLog, x), CreateUnary(kLog, y));

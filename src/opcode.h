@@ -2,6 +2,8 @@
 #include <optional>
 #include <string>
 
+// TODO define these in terms of macros
+
 // Underlying type of uint8_t allows for up to 256 distinct opcodes; increase if
 // more should ever be needed
 enum Opcode : uint8_t {
