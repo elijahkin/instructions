@@ -186,6 +186,7 @@ void multiply_powers_test() {
 
   Optimizer opt;
   opt.Run(mul);
+  // TODO This seems to be flaky?
   assert(mul->opcode() == kPower && IsConstantWithValue(mul->operand(1), 6));
 }
 

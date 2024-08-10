@@ -1,6 +1,4 @@
-#include <cmath>
-
-#include "instruction.h"
+#include "evaluator.h"
 
 class Optimizer {
 public:
